@@ -178,6 +178,10 @@ export const receptionistRoutes = [
         page: BillList
     },
     {
+        path: "/nfc",
+        page: NFC
+    },
+    {
         path: "/hoa-don/lap-hoa-don",
         page: ChoosePatient
     },
@@ -223,10 +227,6 @@ export const doctorRoutes = [
     {
         path: "/lich-hen",
         page: AppointmentList
-    },
-    {
-        path: "/nfc",
-        page: NFC
     },
     {
         path: "/lich-hen/chi-tiet/:appointment_id",

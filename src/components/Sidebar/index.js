@@ -142,6 +142,15 @@ export default function Sidebar() {
                         :
                         <></>
                     }
+                    {
+                        role === 3
+                        ?
+                        <NavLink to="/nfc" className="nav-item nav-link">
+                            <i className="me-2"><FontAwesomeIcon icon={faFileInvoiceDollar}/></i>NFC
+                        </NavLink>
+                        :
+                        <></>
+                    }
                 </div>
             </nav>
         </div>
