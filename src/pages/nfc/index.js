@@ -1,17 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Vertical } from "../../utils/AnimatedPage";
 import { useDispatch } from "react-redux";
 
 export default function NFC() {
-//   const dispatch = useDispatch();
-//   const [id,setid] = useState(0)
+  const dispatch = useDispatch();
+
   const handleWriteNFC = async () => {
-
     alert("User clicked write button");
-    // I want to write a URL to the NFC
     try {
-      const ndef = new NDEFReader();
-
+      const ndef = new window.NDEFReader();
       await ndef.write({
         records: [
           {
@@ -31,10 +28,7 @@ export default function NFC() {
     <Vertical>
       <form></form>
       <h1>Cấp thẻ NFC</h1>
-      <button
-        onClick={handleWriteNFC}
-        id="btn_write"
-      >
+      <button onClick={handleWriteNFC} id="btn_write">
         Write NFC
       </button>
     </Vertical>
