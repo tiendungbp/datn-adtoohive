@@ -30,6 +30,7 @@ import BookingAppointment from "../pages/Appointments/BookingAppointment";
 
 import BillList from "../pages/Bills/BillList";
 import BillDetails from "../pages/Bills/BillDetails";
+import NFC from "../pages/nfc";
 
 
 export const publicRoutes = [
@@ -222,6 +223,10 @@ export const doctorRoutes = [
     {
         path: "/lich-hen",
         page: AppointmentList
+    },
+    {
+        path: "/nfc",
+        page: NFC
     },
     {
         path: "/lich-hen/chi-tiet/:appointment_id",
