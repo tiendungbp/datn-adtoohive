@@ -1,0 +1,19 @@
+.ant-table-thead tr:first-child > th {
+    text-align: center;
+}
+
+.btn-add-row-container button {
+    float: right;
+}
+
+@media (max-width: 545px) {
+    .btn-add-row-container button span {
+        display: none;
+    }
+
+    .btn-add-row-container button::after {
+        font-family: "Font Awesome 5 Free";
+        content: "➕";
+        font-weight: 900;
+    }
+}
