@@ -13,7 +13,7 @@ export default function NFC() {
         records: [
           {
             recordType: "url",
-            data: "https://www.youtube.com/shorts/YTvUC3bIRpY",
+            data: "https://chat.zalo.me/",
           },
         ],
       });
