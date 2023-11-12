@@ -32,14 +32,14 @@ export default function NFC() {
   const prefix = user_id.slice(0, 2);
 
   //MODAL
-  const [idNFC, setIdNFC ] = useState("")
+  const [idNFC, setIdNFC] = useState("");
   const [isModalNFC, setIsModalNFC] = useState(false);
   const showModalNFC = (e) => {
-    setIdNFC(e)
+    setIdNFC(e);
     setIsModalNFC(true);
   };
   const handleOk = () => {
-    handleWriteNFC(idNFC)
+    handleWriteNFC(idNFC);
     setIsModalNFC(false);
   };
   const handleCancel = () => {
@@ -53,7 +53,11 @@ export default function NFC() {
       dataIndex: "patient_id",
       align: "center",
       render: (patient_id) => (
-        <a   onClick={()=>{showModalNFC(patient_id)}}>
+        <a
+          onClick={() => {
+            showModalNFC(patient_id);
+          }}
+        >
           {patient_id}
         </a>
       ),
@@ -218,7 +222,9 @@ export default function NFC() {
     if (e.keyCode === 13) handleSearchByNameOrPhone();
   };
   const handleWriteNFC = async (id) => {
-    toast.loading("Vui lòng để thẻ áp sát vào mặt sau của điện thoại có hỗ trợ NFC")
+    const loadingToast = toast.loading(
+      "Vui lòng để thẻ áp sát vào mặt sau của điện thoại có hỗ trợ NFC"
+    );
     try {
       const ndef = new window.NDEFReader();
       await ndef.write({
@@ -229,9 +235,13 @@ export default function NFC() {
           },
         ],
       });
-      toast.success("Bạn đã tích hợp thành công vào thẻ NFC")
+      toast.dismiss(loadingToast);
+      toast.success("Bạn đã tích hợp thành công vào thẻ NFC");
     } catch (error) {
-      toast.error("Không thể đọc thẻ NFC. Bạn nên kiểm tra lại NFC ở máy có hỗ trợ không ?");
+      toast.dismiss(loadingToast);
+      toast.error(
+        "Không thể đọc thẻ NFC. Bạn nên kiểm tra lại NFC ở máy có hỗ trợ không ?"
+      );
     }
   };
 
@@ -340,9 +350,12 @@ export default function NFC() {
           </div>
         </div>
       </div>
-      <Modal title="Cấp thẻ NFC" open={isModalNFC} onOk={handleOk} onCancel={handleCancel}>
-        
-      </Modal>
+      <Modal
+        title="Cấp thẻ NFC"
+        open={isModalNFC}
+        onOk={handleOk}
+        onCancel={handleCancel}
+      ></Modal>
     </Vertical>
   );
 }
