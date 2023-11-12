@@ -218,6 +218,7 @@ export default function NFC() {
     if (e.keyCode === 13) handleSearchByNameOrPhone();
   };
   const handleWriteNFC = async (id) => {
+    toast.loading("Vui lòng để thẻ áp sát vào mặt sau của điện thoại có hỗ trợ NFC")
     try {
       const ndef = new window.NDEFReader();
       await ndef.write({
