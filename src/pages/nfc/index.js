@@ -218,7 +218,6 @@ export default function NFC() {
     if (e.keyCode === 13) handleSearchByNameOrPhone();
   };
   const handleWriteNFC = async (id) => {
-    alert("User clicked write button");
     try {
       const ndef = new window.NDEFReader();
       await ndef.write({
@@ -229,10 +228,9 @@ export default function NFC() {
           },
         ],
       });
-
-      alert("> Message written");
+      toast.success("Bạn đã tích hợp thành công vào thẻ NFC")
     } catch (error) {
-      alert("Argh! Cannot read data from the NFC tag. Try another one?");
+      toast.error("Không thể đọc thẻ NFC. Bạn nên kiểm tra lại NFC ở máy có hỗ trợ không ?");
     }
   };
 
