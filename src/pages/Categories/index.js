@@ -10,37 +10,13 @@ import Swal from 'sweetalert2';
 import CommonUtils from '../../utils/commonUtils';
 import moment from 'moment';
 
-export default function Categories({ accessToken }) {
-	// //XỬ LÝ CONFIG AXIOS
-	// const user = useSelector(state => state.user.user);
-	// const axiosJWT = axios.create();
-	const dispatch = useDispatch();
-
-	// axiosJWT.interceptors.request.use(async(config) => {
-	//     let date = new Date();
-	//     const decodedToken = jwt_decode(user.access_token);
-	//     if(decodedToken.exp < date.getTime() / 1000) {
-	//         const res = await axios(`${process.env.REACT_APP_API_URL}/api/auth/refresh-token`, {
-	//             method: "post",
-	//             withCredentials: true
-	//         });
-	//         Cookies.set("refreshToken", res.data.data.refresh_token);
-	//         const refreshUser = {
-	//             ...user,
-	//             access_token: res.data.data.access_token
-	//         };
-	//         dispatch(setUserInfo({user: refreshUser, login: true}));
-	//         config.headers["token"] = `Bearer ${res.data.data.access_token}`;
-	//     };
-	//     return config;
-	// }, e => {
-	//     return Promise.reject(e);
-	// });
-
+export default function Categories() {
 	//KHAI BÁO BIẾN
+	const dispatch = useDispatch();
 	const [categoryList, setCategoryList] = useState([]);
 	const [isOpen, setIsOpen] = useState(false);
-	const [isLoading, setIsLoading] = useState(false);
+	const [pageLoading, setPageLoading] = useState(false);
+	const [modalLoading, setModalLoading] = useState(false);
 	const [searchList, setSearchList] = useState(null);
 	const [keyword, setKeyword] = useState('');
 	const [form] = Form.useForm();
@@ -63,7 +39,7 @@ export default function Categories({ accessToken }) {
 			title: 'Trạng thái',
 			dataIndex: 'status',
 			render: (status) =>
-				status === true ? (
+				status === 1 ? (
 					<span className="text-success">Đang hoạt động</span>
 				) : (
 					<span className="text-danger">Ngưng hoạt động</span>
@@ -101,15 +77,14 @@ export default function Categories({ accessToken }) {
 			});
 			setSearchList(list);
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [categoryList]);
 
 	//XỬ LÝ LẤY TẤT CẢ DANH MỤC
 	const getAllCategories = async () => {
-		setIsLoading(true);
+		setPageLoading(true);
 		const res = await categoryAPI.getAll();
 		setCategoryList(res.data.data);
-		setIsLoading(false);
+		setPageLoading(false);
 	};
 
 	//XỬ LÝ LỌC DANH MỤC THEO TRẠNG THÁI
@@ -124,12 +99,19 @@ export default function Categories({ accessToken }) {
 		}
 	};
 
-	//XỬ LÝ TÌM DANH MỤC THEO TÊN
-	const handleSearchByName = () => {
+	//XỬ LÝ TÌM DANH MỤC THEO MÃ/TÊN
+	const handleSearchByInfo = () => {
 		if (keyword) {
-			const list = categoryList.filter((category) => {
-				return category.category_name.includes(keyword.toLowerCase());
-			});
+			let list;
+			if (keyword.length === 10 && keyword.toLowerCase().slice(0, 2) === 'ct') {
+				list = categoryList.filter((category) => {
+					return category.category_id === keyword.toLowerCase();
+				});
+			} else {
+				list = categoryList.filter((category) => {
+					return category.category_name.includes(keyword.toLowerCase());
+				});
+			}
 			setSearchList(list);
 			setKeyword('');
 		} else {
@@ -139,12 +121,12 @@ export default function Categories({ accessToken }) {
 
 	//XỬ LÝ THÊM MỚI DANH MỤC
 	const handleCreateCategory = async (values) => {
-		setIsLoading(true);
+		setModalLoading(true);
 		const res = await categoryAPI.create({
 			category_name: values.category_name,
 			status: values.status,
 		});
-		setIsLoading(false);
+		setModalLoading(false);
 
 		const { errCode } = res.data;
 		if (errCode === 0) {
@@ -156,12 +138,11 @@ export default function Categories({ accessToken }) {
 		} else {
 			toast.error('Thêm thất bại'); //errCode === 5
 		}
-		setIsOpen(false);
 	};
 
 	//XỬ LÝ CẬP NHẬT DANH MỤC
 	const handleUpdateCategory = async (values) => {
-		setIsLoading(true);
+		setModalLoading(true);
 		const res = await categoryAPI.update(
 			{
 				category_name: values.category_name,
@@ -169,7 +150,7 @@ export default function Categories({ accessToken }) {
 			},
 			data.category_id,
 		);
-		setIsLoading(false);
+		setModalLoading(false);
 
 		const { errCode } = res.data;
 		if (errCode === 0) {
@@ -182,14 +163,13 @@ export default function Categories({ accessToken }) {
 		} else {
 			toast.error('Cập nhật thất bại'); //errCode === 1 || errCode === 5
 		}
-		setIsOpen(false);
 	};
 
 	//XỬ LÝ XÓA DANH MỤC
 	const handleDeleteCategory = async (record) => {
-		setIsLoading(true);
+		setPageLoading(true);
 		const res = await categoryAPI.delete(record.category_id);
-		setIsLoading(false);
+		setPageLoading(false);
 
 		const { errCode } = res.data;
 		if (errCode === 0) {
@@ -228,13 +208,13 @@ export default function Categories({ accessToken }) {
 
 	//XỬ LÝ ENTER KHI TÌM THEO TÊN
 	const handleEnter = (e) => {
-		if (e.keyCode === 13) handleSearchByName();
+		if (e.keyCode === 13) handleSearchByInfo();
 	};
 
 	//XỬ LÝ CLICK BUTTON THÊM MỚI
 	const handleClickButtonAdd = () => {
 		dispatch(setData({}));
-		form.setFieldsValue({ category_name: null, status: true });
+		form.setFieldsValue({ category_name: null, status: 1 });
 		setIsOpen(true);
 	};
 
@@ -262,7 +242,7 @@ export default function Categories({ accessToken }) {
 										okButtonProps={{ hidden: true }}
 										cancelButtonProps={{ hidden: true }}
 									>
-										<Spin tip="Đang tải..." spinning={isLoading}>
+										<Spin tip="Đang tải..." spinning={modalLoading}>
 											<Form
 												form={form}
 												layout="vertical"
@@ -289,8 +269,8 @@ export default function Categories({ accessToken }) {
 													<div className="col-md mt-2">
 														<Form.Item label="Trạng thái" name="status">
 															<Radio.Group>
-																<Radio value={true}>Hoạt động</Radio>
-																<Radio value={false}>Ngưng hoạt động</Radio>
+																<Radio value={1}>Hoạt động</Radio>
+																<Radio value={0}>Ngưng hoạt động</Radio>
 															</Radio.Group>
 														</Form.Item>
 													</div>
@@ -328,11 +308,11 @@ export default function Categories({ accessToken }) {
 														className: 'text-primary',
 													},
 													{
-														value: true,
+														value: 1,
 														label: 'Đang hoạt động',
 													},
 													{
-														value: false,
+														value: 0,
 														label: 'Ngưng hoạt động',
 													},
 												]}
@@ -341,7 +321,7 @@ export default function Categories({ accessToken }) {
 										</Form.Item>
 									</div>
 									<div className="col-md-4">
-										<Form.Item label="Tìm theo tên">
+										<Form.Item label="Tìm theo mã/tên">
 											<div className="d-flex w-100">
 												<Input
 													size="large"
@@ -350,7 +330,7 @@ export default function Categories({ accessToken }) {
 													onChange={(e) => setKeyword(e.target.value)}
 													onKeyUp={handleEnter}
 												/>
-												<Button onClick={handleSearchByName}>Tìm</Button>
+												<Button onClick={handleSearchByInfo}>Tìm</Button>
 											</div>
 										</Form.Item>
 									</div>
@@ -363,7 +343,7 @@ export default function Categories({ accessToken }) {
 											columns={columns}
 											list={searchList ? searchList : categoryList}
 											handleDelete={handleDeleteCategory}
-											isLoading={isLoading}
+											isLoading={pageLoading}
 											isOnePage={true}
 											pagination
 										/>

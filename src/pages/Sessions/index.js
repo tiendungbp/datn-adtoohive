@@ -10,13 +10,13 @@ import Swal from 'sweetalert2';
 import dayjs from 'dayjs';
 import moment from 'moment';
 
-export default function Categories({ accessToken }) {
-	const dispatch = useDispatch();
-
+export default function Categories() {
 	//KHAI BÁO BIẾN
+	const dispatch = useDispatch();
 	const [sessionList, setSessionList] = useState([]);
 	const [isOpen, setIsOpen] = useState(false);
-	const [isLoading, setIsLoading] = useState(false);
+	const [pageLoading, setPageLoading] = useState(false);
+	const [modalLoading, setModalLoading] = useState(false);
 	const [searchList, setSearchList] = useState(null);
 	const [form] = Form.useForm();
 	const data = useSelector((state) => state.data);
@@ -38,7 +38,7 @@ export default function Categories({ accessToken }) {
 			title: 'Trạng thái',
 			dataIndex: 'status',
 			render: (status) =>
-				status === true ? (
+				status === 1 ? (
 					<span className="text-success">Đang hoạt động</span>
 				) : (
 					<span className="text-danger">Ngưng hoạt động</span>
@@ -77,15 +77,14 @@ export default function Categories({ accessToken }) {
 			});
 			setSearchList(list);
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [sessionList]);
 
 	//XỬ LÝ LẤY TẤT CẢ CA KHÁM
 	const getAllSessions = async () => {
-		setIsLoading(true);
+		setPageLoading(true);
 		const res = await sessionAPI.getAll();
 		setSessionList(res.data.data);
-		setIsLoading(false);
+		setPageLoading(false);
 	};
 
 	//XỬ LÝ LỌC CA KHÁM THEO TRẠNG THÁI
@@ -93,7 +92,7 @@ export default function Categories({ accessToken }) {
 		if (status === -1) {
 			setSearchList(null);
 		} else {
-			const list = sessionList.filter((session) => session.status === !!status);
+			const list = sessionList.filter((session) => session.status === status);
 			setSearchList(list);
 		}
 	};
@@ -117,12 +116,12 @@ export default function Categories({ accessToken }) {
 		const end = values.end.$d.toTimeString().slice(0, 5);
 		const time = `${start} - ${end}`;
 
-		setIsLoading(true);
+		setModalLoading(true);
 		const res = await sessionAPI.create({
 			time: time,
 			status: values.status,
 		});
-		setIsLoading(false);
+		setModalLoading(false);
 
 		const { errCode } = res.data;
 		if (errCode === 0) {
@@ -134,7 +133,6 @@ export default function Categories({ accessToken }) {
 		} else {
 			toast.error('Thêm thất bại'); //errCode === 5
 		}
-		setIsOpen(false);
 	};
 
 	//XỬ LÝ CẬP NHẬT CA KHÁM
@@ -143,7 +141,7 @@ export default function Categories({ accessToken }) {
 		const end = values.end.$d.toTimeString().slice(0, 5);
 		const time = `${start} - ${end}`;
 
-		setIsLoading(true);
+		setModalLoading(true);
 		const res = await sessionAPI.update(
 			{
 				time: time,
@@ -151,7 +149,7 @@ export default function Categories({ accessToken }) {
 			},
 			data.session_id,
 		);
-		setIsLoading(false);
+		setModalLoading(false);
 
 		const { errCode } = res.data;
 		if (errCode === 0) {
@@ -168,9 +166,9 @@ export default function Categories({ accessToken }) {
 
 	//XỬ LÝ XÓA CA KHÁM
 	const handleDeleteCategory = async (record) => {
-		setIsLoading(true);
+		setPageLoading(true);
 		const res = await sessionAPI.delete(record.session_id);
-		setIsLoading(false);
+		setPageLoading(false);
 
 		const { errCode } = res.data;
 		if (errCode === 0) {
@@ -213,7 +211,7 @@ export default function Categories({ accessToken }) {
 		form.setFieldsValue({
 			start: null,
 			end: null,
-			status: true,
+			status: 1,
 		});
 		setIsOpen(true);
 	};
@@ -242,11 +240,11 @@ export default function Categories({ accessToken }) {
 										okButtonProps={{ hidden: true }}
 										cancelButtonProps={{ hidden: true }}
 									>
-										<Spin tip="Đang tải..." spinning={isLoading}>
+										<Spin tip="Đang tải..." spinning={modalLoading}>
 											<Form
 												form={form}
 												layout="vertical"
-												initialValues={{ status: true }}
+												initialValues={{ status: 1 }}
 												onFinish={handleSubmit}
 											>
 												<div className="row">
@@ -291,8 +289,8 @@ export default function Categories({ accessToken }) {
 													<div className="col-md mt-2">
 														<Form.Item label="Trạng thái" name="status">
 															<Radio.Group>
-																<Radio value={true}>Hoạt động</Radio>
-																<Radio value={false}>Ngưng hoạt động</Radio>
+																<Radio value={1}>Hoạt động</Radio>
+																<Radio value={0}>Ngưng hoạt động</Radio>
 															</Radio.Group>
 														</Form.Item>
 													</div>
@@ -362,7 +360,7 @@ export default function Categories({ accessToken }) {
 											columns={columns}
 											list={searchList ? searchList : sessionList}
 											handleDelete={handleDeleteCategory}
-											isLoading={isLoading}
+											isLoading={pageLoading}
 											isOnePage={true}
 											pagination
 										/>
