@@ -11,15 +11,15 @@ export function SendResetLink() {
 
 
     //STATE CHỨA THÔNG TIN
-    const [isLoading, setIsLoading] = useState(false);
+    const [pageLoading, setPageLoading] = useState(false);
     const [form] = Form.useForm();
 
 
     //XỬ LÝ GỬI EMAIL ĐẶT LẠI MẬT KHẨU
     const handleSendResetLink = async(values) => {
-        setIsLoading(true);
+        setPageLoading(true);
         const res = await authAPI.sendResetLink({role: values.role, email: values.email});
-        setIsLoading(false);
+        setPageLoading(false);
 
         const {errCode} = res.data;
         if(errCode === 0) {
@@ -37,11 +37,11 @@ export function SendResetLink() {
 
     return (
         <Horizontal>
-            <Spin tip="Đang tải..." spinning={isLoading}>
-                <div className="container-fluid bg-light">
-                    <div className="row h-100 align-items-center justify-content-center" style={{minHeight: '100vh'}}>
-                        <div className="col-12 col-sm-8 col-md-6 col-lg-5 col-xl-4">
-                            <div className="bg-secondary rounded p-4 p-sm-5 my-4 mx-3 shadow-container">
+            <div className="container-fluid bg-light">
+                <div className="row h-100 align-items-center justify-content-center" style={{minHeight: '100vh'}}>
+                    <div className="col-12 col-sm-8 col-md-6 col-lg-5 col-xl-4">
+                        <div className="bg-secondary rounded p-4 p-sm-5 my-4 mx-3 shadow-container">
+                            <Spin tip="Đang tải..." spinning={pageLoading}>
                                 <div className="d-flex align-items-center justify-content-between mb-3">
                                     <h5 className="text-primary">QUÊN MẬT KHẨU</h5>
                                 </div>
@@ -104,11 +104,11 @@ export function SendResetLink() {
                                         <Link to="/" className="text-decoration-none text-primary">Đăng nhập</Link>
                                     </div>
                                 </Form>
-                            </div>
+                            </Spin>
                         </div>
                     </div>
                 </div>
-            </Spin>
+            </div>
         </Horizontal>
     );
 };
@@ -119,7 +119,7 @@ export function ResetPassword() {
 
     //KHAI BÁO BIẾN, LẤY THÔNG TIN TỪ URL
     const navigate = useNavigate();
-    const [isLoading, setIsLoading] = useState(false);
+    const [pageLoading, setPageLoading] = useState(false);
     const [isExpired, setIsExpired] = useState(false);
     const [form] = Form.useForm();
     const {user_id, token} = useParams();
@@ -129,9 +129,9 @@ export function ResetPassword() {
     const handleResetPassword = async(values) => {
         const resultCheckPassword = CommonUtils.checkPasswordLength(values.password);
         if(resultCheckPassword) {
-            setIsLoading(true);
+            setPageLoading(true);
             const res = await authAPI.resetPassword(user_id, token, values.password);
-            setIsLoading(false);
+            setPageLoading(false);
 
             const {errCode} = res.data;
             if(errCode === 0) {
@@ -158,11 +158,11 @@ export function ResetPassword() {
 
     return (
         <Horizontal>
-            <Spin tip="Đang tải..." spinning={isLoading}>
-                <div className="container-fluid bg-light">
-                    <div className="row h-100 align-items-center justify-content-center" style={{minHeight: '100vh'}}>
-                        <div className="col-12 col-sm-8 col-md-6 col-lg-5 col-xl-4">
-                            <div className="bg-secondary rounded p-4 p-sm-5 my-4 mx-3 shadow-container">
+            <div className="container-fluid bg-light">
+                <div className="row h-100 align-items-center justify-content-center" style={{minHeight: '100vh'}}>
+                    <div className="col-12 col-sm-8 col-md-6 col-lg-5 col-xl-4">
+                        <div className="bg-secondary rounded p-4 p-sm-5 my-4 mx-3 shadow-container">
+                            <Spin tip="Đang tải..." spinning={pageLoading}>
                                 <div className="d-flex align-items-center justify-content-between mb-3">
                                     <h5 className="text-primary">ĐẶT LẠI MẬT KHẨU</h5>
                                 </div>
@@ -196,11 +196,11 @@ export function ResetPassword() {
                                         <Link to="/quen-mat-khau" className="text-decoration-none text-primary">Gửi yêu cầu mới</Link>
                                     </div>
                                 </Form>
-                            </div>
+                            </Spin>
                         </div>
                     </div>
                 </div>
-            </Spin>
+            </div>
         </Horizontal>
     );
 };

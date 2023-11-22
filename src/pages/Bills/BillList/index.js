@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Button, DatePicker, Form, Input } from "antd";
+import { Button, DatePicker, Form, Input, Select } from "antd";
 import { Vertical } from "../../../utils/AnimatedPage";
 import moment from "moment";
 import dayjs from "dayjs";
+import toast from "react-hot-toast";
 import DataTable from "../../../components/DataTable";
 import CommonUtils from "../../../utils/commonUtils";
 import billAPI from "../../../services/billAPI";
@@ -13,10 +14,11 @@ export default function BillList() {
 
 
     //KHAI BÁO BIẾN
-    const [isLoading, setIsLoading] = useState(false);
+    const [pageLoading, setPageLoading] = useState(false);
     const [billList, setBillList] = useState([]);
     const [searchList, setSearchList] = useState(null);
-    const [keyword, setKeyword] = useState("");
+    const [billKeyword, setBillKeyword] = useState("");
+    const [patientKeyword, setPatientKeyword] = useState("");
 
 
     //ĐỊNH DẠNG DATATABLE
@@ -72,37 +74,74 @@ export default function BillList() {
 
     //XỬ LÝ LẤY TẤT CẢ HÓA ĐƠN
     const getAllBills = async() => {
-        setIsLoading(true);
+        setPageLoading(true);
         const res = await billAPI.getAll();
         setBillList(res.data.data);
-        setIsLoading(false);
+        setPageLoading(false);
+    };
+
+
+    //XỬ LÝ LỌC HÓA ĐƠN THEO TRẠNG THÁI
+    const handleFilterByStatus = (status) => {
+        if(status === -1) {
+            setSearchList(null);
+        }
+        else {
+            const list = billList.filter(bill => bill.status === status);
+            setSearchList(list);
+        };
     };
 
 
     //XỬ LÝ TÌM THEO NGÀY LẬP HÓA ĐƠN
     const handleSearchByDate = (date) => {
-        console.log(date);
         const list = billList.filter(bill => moment(bill.createdAt).format("YYYY-MM-DD") === date);
         setSearchList(list);
     };
 
 
-    //XỬ LÝ TÌM THEO TÊN HOẶC SỐ ĐIỆN THOẠI
-    const handleSearchByNameOrPhone = () => {
-        if(keyword) {
-            const isPhoneNumber = CommonUtils.checkPhoneNumber(keyword);
-            if(isPhoneNumber) {
-                const list = billList.filter(bill => bill.Patient.phone === keyword);
-                setSearchList(list);
-                setKeyword("");
-            }
-            else {
+    //XỬ LÝ TÌM DỊCH VỤ THEO MÃ HÓA ĐƠN
+    const handleSearchByBillID = () => {
+        if(billKeyword) {
+            if(billKeyword.length === 10 && billKeyword.toLowerCase().slice(0, 2) === "hd") {
                 const list = billList.filter(bill => {
-                    return bill.Patient.fullname.toLowerCase().includes(keyword.toLowerCase());
+                    return bill.bill_id === billKeyword.toLowerCase();
                 });
                 setSearchList(list);
-                setKeyword("");
+                setBillKeyword("");
+            }
+            else {
+                toast.error("Mã không hợp lệ");
+                setSearchList(null);
+                setBillKeyword("");
             };
+        }
+        else {
+            setSearchList(null);
+        };
+    };
+
+
+    //XỬ LÝ TÌM THEO MÃ/TÊN/SỐ ĐIỆN THOẠI
+    const handleSearchByPatientInfo = () => {
+        if(patientKeyword) {
+            const isPhoneNumber = CommonUtils.checkPhoneNumber(patientKeyword);
+            let list;
+            if(isPhoneNumber) {
+                list = billList.filter(bill => bill.Patient.phone === patientKeyword);
+            }
+            else if(patientKeyword.length === 10 && patientKeyword.toLowerCase().slice(0, 2) === "bn") {
+                list = billList.filter(bill => {
+                    return bill.Patient.patient_id === patientKeyword.toLowerCase();
+                });
+            }
+            else {
+                list = billList.filter(bill => {
+                    return bill.Patient.fullname.toLowerCase().includes(patientKeyword.toLowerCase());
+                });
+            };
+            setSearchList(list);
+            setPatientKeyword("");
         }
         else {
             setSearchList(null);
@@ -112,7 +151,14 @@ export default function BillList() {
 
     //XỬ LÝ ENTER
     const handleEnter = (e) => {
-        if(e.keyCode === 13) handleSearchByNameOrPhone();
+        if(e.keyCode === 13) {
+            if(billKeyword) {
+                handleSearchByBillID();
+            }
+            else {
+                handleSearchByPatientInfo();
+            };
+        };
     };
 
 
@@ -136,7 +182,26 @@ export default function BillList() {
                         <div className="rounded p-4 bg-secondary">
                             <Form layout="vertical">
                                 <div className="row mb-4">
-                                    <div className="col-md-4">
+                                    <div className="col-md-2">
+                                        <Form.Item label="Tìm theo trạng thái">
+                                            <Select
+                                                className="w-100"
+                                                placeholder="Chọn trạng thái"
+                                                size="large"
+                                                options={[
+                                                    {
+                                                        value: -1,
+                                                        label: "Hiển thị tất cả",
+                                                        className: "text-primary"
+                                                    },
+                                                    {value: 0, label: "Chưa thanh toán"},
+                                                    {value: 1, label: "Đã thanh toán"}
+                                                ]}
+                                                onChange={value => handleFilterByStatus(value)}
+                                            />
+                                        </Form.Item>
+                                    </div>
+                                    <div className="col-md-2">
                                         <Form.Item label="Tìm theo ngày lập">
                                             <DatePicker
                                                 size="large"
@@ -155,16 +220,30 @@ export default function BillList() {
                                         </Form.Item>
                                     </div>
                                     <div className="col-md-4">
-                                        <Form.Item label="Tìm theo tên/số điện thoại bệnh nhân">
+                                        <Form.Item label="Tìm theo mã hóa đơn">
                                             <div className="d-flex w-100">
                                                 <Input
                                                     size="large"
                                                     placeholder="Nhập thông tin"
-                                                    value={keyword}
-                                                    onChange={e => setKeyword(e.target.value)}
+                                                    value={billKeyword}
+                                                    onChange={e => setBillKeyword(e.target.value)}
                                                     onKeyUp={handleEnter}
                                                 />
-                                                <Button onClick={handleSearchByNameOrPhone}>Tìm</Button>
+                                                <Button onClick={handleSearchByBillID}>Tìm</Button>
+                                            </div>
+                                        </Form.Item>
+                                    </div>
+                                    <div className="col-md-4">
+                                        <Form.Item label="Tìm theo mã/tên/số điện thoại bệnh nhân">
+                                            <div className="d-flex w-100">
+                                                <Input
+                                                    size="large"
+                                                    placeholder="Nhập thông tin"
+                                                    value={patientKeyword}
+                                                    onChange={e => setPatientKeyword(e.target.value)}
+                                                    onKeyUp={handleEnter}
+                                                />
+                                                <Button onClick={handleSearchByPatientInfo}>Tìm</Button>
                                             </div>
                                         </Form.Item>
                                     </div>
@@ -177,7 +256,7 @@ export default function BillList() {
                                             columns={columns}
                                             list={searchList ? searchList : billList}
                                             detailsPage={detailsPage}
-                                            isLoading={isLoading}
+                                            isLoading={pageLoading}
                                             isBillPage={true}
                                             pagination
                                         />

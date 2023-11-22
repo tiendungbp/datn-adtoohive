@@ -1,3 +1,4 @@
+import 'react-markdown-editor-lite/lib/index.css';
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
@@ -29,11 +30,10 @@ import employeeAPI from '../../services/employeeAPI';
 import doctorAPI from '../../services/doctorAPI';
 import authAPI from '../../services/authAPI';
 import imageAPI from '../../services/imageAPI';
-import 'react-markdown-editor-lite/lib/index.css';
 
 const mdParser = new MarkdownIt(/* Markdown-it options */);
 
-export default function Account({ accessToken }) {
+export default function Account() {
 	//KHAI BÁO BIẾN, FORM
 	const dispatch = useDispatch();
 	const navigate = useNavigate();
@@ -56,7 +56,8 @@ export default function Account({ accessToken }) {
 	const [file, setFile] = useState(null);
 
 	//LOADING, HIDDEN, MỞ MODAL
-	const [isLoading, setIsLoading] = useState(false);
+	const [pageLoading, setPageLoading] = useState(false);
+	const [modalLoading, setModalLoading] = useState(false);
 	const [isHidden, setIsHidden] = useState(true);
 	const [isEmailOpen, setIsEmailOpen] = useState(false);
 	const [isPasswordOpen, setIsPasswordOpen] = useState(false);
@@ -82,7 +83,7 @@ export default function Account({ accessToken }) {
 	//THÔNG TIN NGƯỜI DÙNG ĐANG ĐĂNG NHẬP
 	const [user, setUser] = useState(null);
 	const user_id = useSelector((state) => state.user.user.user_id);
-	const role = useSelector((state) => state.user.user.role);
+	const prefix = user_id.slice(0, 2);
 
 	//KHỞI TẠO GIÁ TRỊ CHO THÔNG TIN CƠ BẢN
 	const basicInfo = {
@@ -101,11 +102,11 @@ export default function Account({ accessToken }) {
 	//KHỞI TẠO GIÁ TRỊ CHO THÔNG TIN TÀI KHOẢN
 	const accountInfo = {
 		role:
-			role === 2
+			prefix === 'qt'
 				? 'Quản trị viên'
-				: role === 3
+				: prefix === 'lt'
 				? 'Lễ tân'
-				: role === 4
+				: prefix === 'bs'
 				? 'Bác sĩ'
 				: 'Phụ tá',
 		email: user ? user.email : null,
@@ -116,7 +117,7 @@ export default function Account({ accessToken }) {
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 		getAllCities();
 		if (user_id) getUserByID();
-		// eslint-disable-next-line
+		//eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	//GÁN THÔNG TIN NHÂN VIÊN LÊN FORM
@@ -127,9 +128,9 @@ export default function Account({ accessToken }) {
 			basicInfoForm.setFieldsValue(basicInfo);
 			accountInfoForm.setFieldsValue(accountInfo);
 			if (user.avatar) setLocalPath(user.avatar);
-			if (role === 4) setIsHidden(false);
+			if (prefix === 'bs') setIsHidden(false);
 		}
-		// eslint-disable-next-line
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [basicInfoForm, accountInfoForm, user]);
 
 	//LẤY CÁC QUẬN NẾU THÔNG TIN BAN ĐẦU CÓ THÀNH PHỐ
@@ -157,17 +158,17 @@ export default function Account({ accessToken }) {
 	//XỬ LÝ LẤY NHÂN VIÊN BẰNG ID
 	const getUserByID = async () => {
 		let res;
-		switch (role) {
-			case 2:
-			case 3:
-			case 5:
+		switch (prefix) {
+			case 'qt':
+			case 'lt':
+			case 'pt':
 				res = await employeeAPI.getByID(user_id);
 				if (res.data.errCode === 0) {
 					const { employee_id, ...employeeInfo } = res.data.data;
 					setUser({ ...employeeInfo, user_id: employee_id });
 				}
 				break;
-			case 4:
+			case 'bs':
 				res = await doctorAPI.getByID(user_id);
 				if (res.data.errCode === 0) {
 					const { doctor_id, ...doctorInfo } = res.data.data;
@@ -229,7 +230,7 @@ export default function Account({ accessToken }) {
 		setMarkdown(text);
 	};
 
-	//XỬ LÝ CẬP NHẬT NHÂN VIÊN
+	//XỬ LÝ CẬP NHẬT PROFILE
 	const handleUpdateProfile = async (values) => {
 		let url;
 
@@ -256,20 +257,14 @@ export default function Account({ accessToken }) {
 		};
 
 		let res;
-		setIsLoading(true);
-		switch (role) {
-			case 2:
-			case 3:
-			case 5:
-				res = await employeeAPI.updateProfile(
-					{
-						...userInfo,
-						role: role,
-					},
-					user_id,
-				);
+		setPageLoading(true);
+		switch (prefix) {
+			case 'qt':
+			case 'lt':
+			case 'pt':
+				res = await employeeAPI.updateProfile(userInfo, user_id);
 				break;
-			case 4:
+			case 'bs':
 				res = await doctorAPI.updateProfile(
 					{
 						...userInfo,
@@ -282,7 +277,7 @@ export default function Account({ accessToken }) {
 			default:
 				break;
 		}
-		setIsLoading(false);
+		setPageLoading(false);
 
 		const { errCode, type } = res.data;
 		if (errCode === 0) {
@@ -346,7 +341,7 @@ export default function Account({ accessToken }) {
 			},
 		}).then(async (result) => {
 			if (result.isConfirmed) {
-				setIsLoading(true);
+				setModalLoading(true);
 				const res = await authAPI.changeEmail(
 					{
 						new_email: values.new_email,
@@ -354,7 +349,7 @@ export default function Account({ accessToken }) {
 					},
 					user_id,
 				);
-				setIsLoading(false);
+				setModalLoading(false);
 
 				const { errCode, type } = res.data;
 				if (errCode === 0) {
@@ -396,7 +391,7 @@ export default function Account({ accessToken }) {
 				},
 			}).then(async (result) => {
 				if (result.isConfirmed) {
-					setIsLoading(true);
+					setModalLoading(true);
 					const res = await authAPI.changePassword(
 						{
 							current_password: values.current_password,
@@ -404,7 +399,7 @@ export default function Account({ accessToken }) {
 						},
 						user_id,
 					);
-					setIsLoading(false);
+					setModalLoading(false);
 
 					const { errCode } = res.data;
 					if (errCode === 0) {
@@ -427,25 +422,26 @@ export default function Account({ accessToken }) {
 	const handleLogout = () => {
 		Cookies.remove('refreshToken');
 		dispatch(setUserInfo({ user: null, login: false }));
+		localStorage.setItem('accessToken', null);
 		navigate('/');
 	};
 
 	return (
 		<Vertical>
-			<Spin tip="Đang tải..." spinning={isLoading}>
-				<div className="container-fluid pt-4">
-					<div className="row bg-light rounded mx-0 mb-4">
-						<div className="col-md">
-							<div className="rounded p-4 bg-secondary">
-								<div className="row mb-3">
-									<div className="col-md">
-										<Link to="/" className="text-decoration-none text-primary">
-											<small>
-												<FontAwesomeIcon icon={faChevronLeft} /> Trang chủ
-											</small>
-										</Link>
-									</div>
+			<div className="container-fluid pt-4">
+				<div className="row bg-light rounded mx-0 mb-4">
+					<div className="col-md">
+						<div className="rounded p-4 bg-secondary">
+							<div className="row mb-3">
+								<div className="col-md">
+									<Link to="/" className="text-decoration-none text-primary">
+										<small>
+											<FontAwesomeIcon icon={faChevronLeft} /> Trang chủ
+										</small>
+									</Link>
 								</div>
+							</div>
+							<Spin tip="Đang tải..." spinning={pageLoading}>
 								<div className="row mb-3">
 									<div className="col-md">
 										<h5 className="text-uppercase text-primary mb-0">
@@ -737,7 +733,7 @@ export default function Account({ accessToken }) {
 																okButtonProps={{ hidden: true }}
 																cancelButtonProps={{ hidden: true }}
 															>
-																<Spin tip="Đang tải..." spinning={isLoading}>
+																<Spin tip="Đang tải..." spinning={modalLoading}>
 																	<div className="text-center">
 																		<h5 className="text-primary">
 																			Đổi địa chỉ email
@@ -836,7 +832,7 @@ export default function Account({ accessToken }) {
 																okButtonProps={{ hidden: true }}
 																cancelButtonProps={{ hidden: true }}
 															>
-																<Spin tip="Đang tải..." spinning={isLoading}>
+																<Spin tip="Đang tải..." spinning={modalLoading}>
 																	<div className="text-center">
 																		<h5 className="text-primary">
 																			Đổi mật khẩu
@@ -930,11 +926,11 @@ export default function Account({ accessToken }) {
 										</Tabs>
 									</div>
 								</div>
-							</div>
+							</Spin>
 						</div>
 					</div>
 				</div>
-			</Spin>
+			</div>
 		</Vertical>
 	);
-} 
+}

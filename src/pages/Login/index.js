@@ -10,26 +10,27 @@ import authAPI from '../../services/authAPI';
 
 export default function Login() {
 	//STATE CHỨA THÔNG TIN
-	const [isLoading, setIsLoading] = useState(false);
+	const [pageLoading, setPageLoading] = useState(false);
 	const dispatch = useDispatch();
 
 	//XỬ LÝ ĐĂNG NHẬP
 	const handleLogin = async (values) => {
-		setIsLoading(true);
+		setPageLoading(true);
 		const res = await authAPI.login({
 			role: values.role,
 			email: values.email,
 			password: values.password,
 		});
-		setIsLoading(false);
+		setPageLoading(false);
 
 		const { errCode, type } = res.data;
 		if (errCode === 0) {
 			toast.success('Đăng nhập thành công');
-			const { refresh_token, ...data } = res.data.data;
+			const { refresh_token, access_token, ...data } = res.data.data;
 			const action = setUserInfo({ user: data, login: true });
 			dispatch(action);
-			Cookies.set('refreshToken', res.data.data.refresh_token);
+			Cookies.set('refreshToken', refresh_token);
+			localStorage.setItem('accessToken', access_token);
 		} else if (errCode === 4) {
 			toast.error('Tài khoản chưa xác minh email');
 		} else if (errCode === 2 && type === 'role') {
@@ -47,16 +48,16 @@ export default function Login() {
 
 	return (
 		<Horizontal>
-			<Spin tip="Đang tải..." spinning={isLoading}>
-				<div className="container-fluid bg-light">
-					<div
-						className="row h-100 align-items-center justify-content-center"
-						style={{ minHeight: '100vh' }}
-					>
-						<div className="col-12 col-sm-8 col-md-6 col-lg-5 col-xl-4">
-							<div className="bg-secondary rounded p-4 p-sm-5 my-4 mx-3 shadow-container">
+			<div className="container-fluid bg-light">
+				<div
+					className="row h-100 align-items-center justify-content-center"
+					style={{ minHeight: '100vh' }}
+				>
+					<div className="col-12 col-sm-8 col-md-6 col-lg-5 col-xl-4">
+						<div className="bg-secondary rounded p-4 p-sm-5 my-4 mx-3 shadow-container">
+							<Spin tip="Đang tải..." spinning={pageLoading}>
 								<div className="d-flex align-items-center justify-content-between mb-3">
-									<h3 className="text-primary">Toohive</h3>
+									<h3 className="text-primary">Toothhive</h3>
 								</div>
 								<Form
 									layout="vertical"
@@ -148,11 +149,11 @@ export default function Login() {
 										</Link>
 									</div>
 								</Form>
-							</div>
+							</Spin>
 						</div>
 					</div>
 				</div>
-			</Spin>
+			</div>
 		</Horizontal>
 	);
 }

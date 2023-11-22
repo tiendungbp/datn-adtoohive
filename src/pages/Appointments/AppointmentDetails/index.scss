@@ -13,7 +13,38 @@
 
     .btn-add-row-container button::after {
         font-family: "Font Awesome 5 Free";
-        content: "➕";
+        content: "\2b";
+        font-weight: 900;
+    }
+}
+
+.custom-input-number .ant-input-number-input {
+    text-align: center !important;
+}
+
+@media (max-width: 1400px) {
+    .appointment-details-col-btn .save-btn span,
+    .appointment-details-col-btn .print-btn span,
+    .appointment-details-col-btn .booking-btn span {
+        display: none;
+    }
+
+    .appointment-details-col-btn .save-btn button::after {
+        font-family: "Font Awesome 5 Free";
+        content: "\f0c7";
+        font-weight: 900;
+        color: white;
+    }
+
+    .appointment-details-col-btn .print-btn button::after {
+        font-family: "Font Awesome 5 Free";
+        content: "\f019";
+        font-weight: 900;
+    }
+
+    .appointment-details-col-btn .booking-btn button::after {
+        font-family: "Font Awesome 5 Free";
+        content: "\f274";
         font-weight: 900;
     }
 }

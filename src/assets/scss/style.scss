@@ -610,3 +610,7 @@ a {
 .antd-bg-light {
     background: #e6f4ff;
 }
+
+.dropdown-item:hover {
+    background-color: var(--light) !important;
+}

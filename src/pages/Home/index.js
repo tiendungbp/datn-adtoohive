@@ -29,7 +29,7 @@ export default function Home() {
 									className="col-lg-6 p-5 wow fadeIn bg-primary rounded"
 									data-wow-delay="0.1s"
 								>
-									<h1 className="text-white mb-5 custom-fs-1">Toohive</h1>
+									<h1 className="text-white mb-5 custom-fs-1">Toothhive</h1>
 									<h1 className="text-white mb-5">Vì Sức Khỏe Của Bạn</h1>
 									<div className="row g-4">
 										<div className="col-sm-4">

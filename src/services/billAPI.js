@@ -1,22 +1,22 @@
-import axios from "axios";
+import axiosInstance from "../utils/customAxios";
 
 const baseURL = `${process.env.REACT_APP_API_URL}/api/bill`;
 
 const billAPI = {
     getAll: () => {
-        return axios.get(`${baseURL}/all`);
+        return axiosInstance.get(`${baseURL}/all`);
     },
     getByID: (bill_id) => {
-        return axios.get(`${baseURL}/${bill_id}`);
+        return axiosInstance.get(`${baseURL}/${bill_id}`);
     },
     create: (obj) => {
-        return axios.post(`${baseURL}/create`, obj);
+        return axiosInstance.post(`${baseURL}/create`, obj);
     },
     confirm: (obj) => {
-        return axios.post(`${baseURL}/confirm`, obj);
+        return axiosInstance.post(`${baseURL}/confirm`, obj);
     },
     sendToEmail: (obj) => {
-        return axios.post(`${baseURL}/send`, obj);
+        return axiosInstance.post(`${baseURL}/send`, obj);
     }
 };
 

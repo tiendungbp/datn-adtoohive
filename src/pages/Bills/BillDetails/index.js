@@ -30,7 +30,8 @@ export default function BillDetails() {
     //NAVIGATE, LOADING, USEREF, OPEN MODAL
     const navigate = useNavigate();
     const pdfRef = useRef();
-    const [isLoading, setIsLoading] = useState(false);
+    const [pageLoading, setPageLoading] = useState(false);
+    const [modalLoading, setModalLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
 
@@ -411,7 +412,6 @@ export default function BillDetails() {
         getPatientByID();
         getActiveCategories();
         if(bill_id) getBillByID();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [bill_id]);
 
 
@@ -475,7 +475,7 @@ export default function BillDetails() {
 
     //XỬ LÝ LẤY BỆNH NHÂN THEO ID
     const getPatientByID = async() => {
-        setIsLoading(true);
+        setPageLoading(true);
         const res = await patientAPI.getByID(patient_id);
         if(res.data.errCode === 0) {
             setPatient(res.data.data);
@@ -483,13 +483,13 @@ export default function BillDetails() {
         else {
             navigate("/hoa-don");
         };
-        setIsLoading(false);
+        setPageLoading(false);
     };
 
 
     //XỬ LÝ LẤY HÓA ĐƠN THEO ID
     const getBillByID = async() => {
-        setIsLoading(true);
+        setPageLoading(true);
         const res = await billAPI.getByID(bill_id);
         if(res.data.errCode === 0) {
             const {details, ...rest} = res.data.data;
@@ -503,27 +503,27 @@ export default function BillDetails() {
         else {
             navigate("/hoa-don");
         };
-        setIsLoading(false);
+        setPageLoading(false);
     };
 
     //XỬ LÝ LẤY CÁC DANH MỤC ĐANG HOẠT ĐỘNG
     const getActiveCategories = async() => {
-        setIsLoading(true);
+        setPageLoading(true);
         const res = await categoryAPI.getActive();
         setCategoryList(res.data.data);
-        setIsLoading(false);
+        setPageLoading(false);
     };
 
 
     //XỬ LÝ LỌC DỊCH VỤ THEO DANH MỤC ĐÃ CHỌN
     const getServicesByCategoryID = async(rowId, category_id) => {
-        setIsLoading(true);
+        setPageLoading(true);
         const res = await serviceAPI.getActiveByCategoryID(category_id);
         setServiceList(list => [
             ...list.filter(service => service.rowId !== rowId),
             {rowId, list: res.data.data}
         ]);
-        setIsLoading(false);
+        setPageLoading(false);
     };
 
 
@@ -644,14 +644,14 @@ export default function BillDetails() {
                         if(obj.service_id && obj.quantity) list.push(obj);
                     });
     
-                    setIsLoading(true);
+                    setPageLoading(true);
                     const res = await billAPI.create({
                         appointment_id: appointment ? appointment.appointment_id : null,
                         patient_id: patient_id,
                         employee_id: user_id,
                         list: list
                     });
-                    setIsLoading(false);
+                    setPageLoading(false);
     
                     const {errCode, data} = res.data;
                     if(errCode === 0) {
@@ -686,12 +686,12 @@ export default function BillDetails() {
             })
             .then(async(result) => {
                 if(result.isConfirmed) {
-                    setIsLoading(true);
+                    setPageLoading(true);
                     const res = await billAPI.confirm({
                         bill_id,
                         method_id: method
                     });
-                    setIsLoading(false);
+                    setPageLoading(false);
     
                     const {errCode} = res.data;
                     if(errCode === 0) {
@@ -734,44 +734,75 @@ export default function BillDetails() {
 
     //XỬ LÝ GỬI HÓA ĐƠN TỚI EMAIL
     const handleSendBillToEmail = () => {
-        const input = pdfRef.current;
-        html2canvas(input, {useCORS: true, scale: 2}).then(async canvas => {
-            const imgData = canvas.toDataURL("image/png");
-            setIsLoading(true);
-            const res = await billAPI.sendToEmail({
-                patient_id: patient.patient_id,
-                filename: `HoaDon_${bill.bill_id}`,
-                file: imgData
-            });
-            console.log(res.data);
-            setIsLoading(false);
+        Swal.fire({
+            title: "Xác nhận gửi email?",
+            confirmButtonText: "Xác nhận",
+            showCancelButton: true,
+            cancelButtonText: "Hủy",
+            customClass: {
+                title: "fs-5 fw-normal text-dark",
+                confirmButton: "btn-primary shadow-none",
+                cancelButton: "btn-secondary-cancel shadow-none",
+            },
+        })
+        .then((result) => {
+            if(result.isConfirmed) {
+                const input = pdfRef.current;
+                html2canvas(input, {useCORS: true, scale: 2}).then(async canvas => {
+                    const imgData = canvas.toDataURL("image/png");
+                    const pdf = new jsPDF("p", "mm", "a4", true);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const imgWidth = canvas.width;
+                    const imgHeight = canvas.height;
+                    const ratio = Math.min(pdfWidth/imgWidth, pdfHeight/imgHeight);
+                    const imgX = (pdfWidth - imgWidth * ratio) / 2;
+                    pdf.addImage(imgData, "PNG", imgX, null, imgWidth * ratio, imgHeight * ratio);
+                    const data = pdf.output("datauristring");
+        
+                    setModalLoading(true);
+                    const res = await billAPI.sendToEmail({
+                        patient_id: patient.patient_id,
+                        filename: `HoaDon_${bill.bill_id}.pdf`,
+                        file: data
+                    });
+                    setModalLoading(false);
+        
+                    if(res.data.errCode === 0) {
+                        toast.success("Gửi thành công");
+                    }
+                    else { //errCode === 1
+                        toast.error("Gửi yêu cầu thất bại");
+                    };
+                });
+            };
         });
     };
 
 
     return (
         <Vertical>
-            <Spin tip="Đang tải..." spinning={isLoading}>
-                <div className="container-fluid pt-4">
-                    <div className="row bg-light rounded mx-0 mb-4">
-                        <div className="col-md">
-                            <div className="rounded p-4 bg-secondary">
-                                <div className="row mb-3">
-                                    <div className="col-md">
-                                        <Link
-                                            to={`${bill_id ? "/hoa-don" : "/hoa-don/lap-hoa-don"}`}
-                                            className="text-decoration-none text-primary"
-                                        >
-                                            <small><FontAwesomeIcon icon={faChevronLeft}/> Quay lại</small>
-                                        </Link>
-                                    </div>
+            <div className="container-fluid pt-4">
+                <div className="row bg-light rounded mx-0 mb-4">
+                    <div className="col-md">
+                        <div className="rounded p-4 bg-secondary">
+                            <div className="row mb-3">
+                                <div className="col-md">
+                                    <Link
+                                        to={`${bill_id ? "/hoa-don" : "/hoa-don/lap-hoa-don"}`}
+                                        className="text-decoration-none text-primary"
+                                    >
+                                        <small><FontAwesomeIcon icon={faChevronLeft}/> Quay lại</small>
+                                    </Link>
                                 </div>
+                            </div>
+                            <Spin tip="Đang tải..." spinning={pageLoading}>
                                 <div className="row">
                                     <div className="col-md-4 mt-4 d-flex align-items-center justify-content-center">
                                         <img alt="" className="w-75" src={process.env.REACT_APP_LOGO}/>
                                     </div>
                                     <div className="col-md-4 mt-4 d-flex align-items-center justify-content-center">
-                                        <h4 className="text-uppercase text-primary mb-0">Thông tin hóa đơn</h4>
+                                        <h4 className="text-uppercase text-primary mb-0">Chi tiết hóa đơn</h4>
                                     </div>
                                     <div className="col-md-4 mt-4 d-flex align-items-center justify-content-center">
                                         {
@@ -926,11 +957,11 @@ export default function BillDetails() {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </Spin>
                         </div>
                     </div>
                 </div>
-            </Spin>
+            </div>
             <Modal
                 open={isOpen}
                 onCancel={() => setIsOpen(false)}
@@ -938,19 +969,23 @@ export default function BillDetails() {
                 okButtonProps={{hidden: true}}
                 cancelButtonProps={{hidden: true}}
             >
-                <Spin spinning={isLoading}>
+                <Spin tip="Đang tải..." spinning={modalLoading}>
                     <div ref={pdfRef} className="w-100 px-5 pt-5">
                         <div className="row">
                             <div className="col-md-6 mb-4">
                                 <img alt="" src={process.env.REACT_APP_LOGO} style={{width: "200px"}}/>
                             </div>
                             <div className="col-md-6 mb-4 text-end">
-                                <small>FPT Polytechnic, TP.HCM</small><br/>
+                                <small>180 Cao Lỗ, Phường 04, Quận 08, TP.HCM</small><br/>
                                 <small>076 1234 567</small>
                             </div>
                         </div>
-                        <div className="text-center">
-                            <h4 className="text-uppercase mb-4"><b>HÓA ĐƠN DỊCH VỤ</b></h4>
+                        <div className="row">
+                            <div className="col-md">
+                                <div className="text-center">
+                                    <h4 className="text-uppercase mb-4"><b>Hóa đơn dịch vụ</b></h4>
+                                </div>
+                            </div>
                         </div>
                         <div className="row">
                             <div className="col-md-6 d-flex mt-4">

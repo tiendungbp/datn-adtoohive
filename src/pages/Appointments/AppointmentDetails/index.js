@@ -1,8 +1,8 @@
 import "./index.scss";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { Button, Spin, Table, Select, Input, Popconfirm, InputNumber, Modal, Form, Radio } from "antd";
+import { Button, Spin, Table, Select, Input, Popconfirm, InputNumber, Modal, Form, Radio, Checkbox, Row, Col } from "antd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronLeft, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { Vertical } from "../../../utils/AnimatedPage";
@@ -10,13 +10,18 @@ import moment from "moment";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import ReactToPrint from "react-to-print";
 import CommonUtils from "../../../utils/commonUtils";
 import appointmentAPI from "../../../services/appointmentAPI";
 import categoryAPI from "../../../services/categoryAPI";
 import serviceAPI from "../../../services/serviceAPI";
 import scheduleAPI from "../../../services/scheduleAPI";
 
+
 const CustomSwal = withReactContent(Swal);
+
 
 export default function AppointmentDetails() {
 
@@ -106,11 +111,15 @@ export default function AppointmentDetails() {
     const {appointment_id} = useParams();
 
 
-    //NAVIGATE, LOADING, MODAL
+    //NAVIGATE, LOADING, MODAL, HIDDEN, REF
     const navigate = useNavigate();
-    const [isLoading, setIsLoading] = useState(false);
-    const [isOpen, setIsOpen] = useState(false);
-    const [modalForm] = Form.useForm();
+    const [pageLoading, setPageLoading] = useState(false);
+    const [modalLoading, setModalLoading] = useState(false);
+    const [bookingModalOpen, setBookingModalOpen] = useState(false);
+    const [printModalOpen, setPrintModalOpen] = useState(false);
+    const [bookingModalForm] = Form.useForm();
+    const [isHidden, setIsHidden] = useState(false); //state hidden checkbox dịch vụ tái khám
+    const pdfRef = useRef();
 
 
     //DỮ LIỆU TỪ API
@@ -148,9 +157,33 @@ export default function AppointmentDetails() {
             width: "50px"
         },
         {
+            title: "Loại",
+            render: obj => (
+                obj.createdAt === appointment.createdAt ?
+                <p className="mb-0">Tái khám</p> :
+                <p className="mb-0">Mới</p>
+            )
+        },
+        {
             title: "Danh mục",
             width: "250px",
             render: obj => (
+                appointment.type_id === 2 && obj.createdAt === appointment.createdAt
+                ?
+                <p className="text-capitalize mb-0">
+                    {
+                        selectedCategories.length
+                        ?
+                            selectedCategories.find(category => category.rowId === obj.rowId)
+                            ?
+                            selectedCategories.find(category => category.rowId === obj.rowId).category_name
+                            :
+                            ""
+                        :
+                        ""
+                    }
+                </p>
+                :
                 <Select
                     size="large"
                     className="w-100"
@@ -181,6 +214,22 @@ export default function AppointmentDetails() {
             title: "Dịch vụ",
             width: "250px",
             render: obj => (
+                appointment.type_id === 2 && obj.createdAt === appointment.createdAt
+                ?
+                <p className="text-capitalize mb-0">
+                    {
+                        selectedServices.length
+                        ?
+                            selectedServices.find(service => service.rowId === obj.rowId)
+                            ?
+                            selectedServices.find(service => service.rowId === obj.rowId).service_name
+                            :
+                            ""
+                        :
+                        ""
+                    }
+                </p>
+                :
                 <Select
                     size="large"
                     className="w-100"
@@ -228,11 +277,27 @@ export default function AppointmentDetails() {
             align: "center",
             width: "100px",
             render: obj => (
+                appointment.type_id === 2 && obj.createdAt === appointment.createdAt
+                ?
+                <p className="mb-0">
+                    {
+                        selectedQuantities.length
+                        ?
+                            selectedQuantities.find(quantity => quantity.rowId === obj.rowId)
+                            ?
+                            selectedQuantities.find(quantity => quantity.rowId === obj.rowId).quantity
+                            :
+                            ""
+                        :
+                        ""
+                    }
+                </p>
+                :
                 <InputNumber
                     size="large"
                     type="number"
                     min={1}
-                    className="w-100"
+                    className="w-100 custom-input-number"
                     defaultValue={1}
                     disabled={
                         selectedServices.find(service => service.rowId === obj.rowId)
@@ -289,6 +354,10 @@ export default function AppointmentDetails() {
             align: "center",
             width: "50px",
             render: obj => (
+                appointment.type_id === 2 && obj.createdAt === appointment.createdAt
+                ?
+                <></>
+                :
                 <Popconfirm
                     title="Bạn có muốn xóa?"
                     cancelText="Hủy"
@@ -308,6 +377,14 @@ export default function AppointmentDetails() {
             dataIndex: "ordinalNum",
             align: "center",
             width: "50px"
+        },
+        {
+            title: "Loại",
+            render: obj => (
+                obj.createdAt === appointment.createdAt ?
+                <p className="mb-0">Tái khám</p> :
+                <p className="mb-0">Mới</p>
+            )
         },
         {
             title: "Danh mục",
@@ -394,7 +471,6 @@ export default function AppointmentDetails() {
         window.scrollTo({top: 0, behavior: 'smooth'});
         getAppointmentByID();
         getActiveCategories();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
 
@@ -405,14 +481,17 @@ export default function AppointmentDetails() {
             setRowList(detailsList.map((details, index) => {
                 return {
                     rowId: index + 1,
-                    ordinalNum: index + 1
+                    ordinalNum: index + 1,
+                    detail_id: details.Detail.detail_id,
+                    createdAt: details.Detail.createdAt //cho tái khám
                 };
             }));
             setSelectedCategories(detailsList.map((details, index) => {
                 return {
                     rowId: index + 1,
                     category_id: details.category_id,
-                    category_name: details.Category.category_name
+                    category_name: details.Category.category_name,
+                    createdAt: details.Detail.createdAt //cho tái khám
                 };
             }));
             setSelectedServices(detailsList.map((details, index) => {
@@ -420,19 +499,22 @@ export default function AppointmentDetails() {
                     rowId: index + 1,
                     service_id: details.service_id,
                     service_name: details.service_name,
-                    price: details.price
+                    price: details.price,
+                    createdAt: details.Detail.createdAt //cho tái khám
                 };
             }));
             setSelectedQuantities(detailsList.map((details, index) => {
                 return {
                     rowId: index + 1,
-                    quantity: details.Detail.quantity
+                    quantity: details.Detail.quantity,
+                    createdAt: details.Detail.createdAt //cho tái khám
                 };
             }));
             setDescriptionList(detailsList.map((details, index) => {
                 return {
                     rowId: index + 1,
-                    description: details.Detail.description
+                    description: details.Detail.description,
+                    createdAt: details.Detail.createdAt //cho tái khám
                 };
             }));
         };
@@ -451,9 +533,9 @@ export default function AppointmentDetails() {
 
     //XỬ LÝ LẤY LỊCH HẸN THEO ID
     const getAppointmentByID = async() => {
-        setIsLoading(true);
+        setPageLoading(true);
         const res = await appointmentAPI.getByID(appointment_id, user_id);
-        setIsLoading(false);
+        setPageLoading(false);
 
         if(res.data.errCode === 0) {
             setAppointment(res.data.data);
@@ -467,22 +549,22 @@ export default function AppointmentDetails() {
 
     //XỬ LÝ LẤY CÁC DANH MỤC ĐANG HOẠT ĐỘNG
     const getActiveCategories = async() => {
-        setIsLoading(true);
+        setPageLoading(true);
         const res = await categoryAPI.getActive();
         setCategoryList(res.data.data);
-        setIsLoading(false);
+        setPageLoading(false);
     };
 
 
     //XỬ LÝ LỌC DỊCH VỤ THEO DANH MỤC ĐÃ CHỌN
     const getServicesByCategoryID = async(rowId, category_id) => {
-        setIsLoading(true);
+        setPageLoading(true);
         const res = await serviceAPI.getActiveByCategoryID(category_id);
         setServiceList(list => [
             ...list.filter(service => service.rowId !== rowId),
             {rowId, list: res.data.data}
         ]);
-        setIsLoading(false);
+        setPageLoading(false);
     };
 
 
@@ -508,7 +590,9 @@ export default function AppointmentDetails() {
             list = list.map((row, index) => {
                 return {
                     rowId: row.rowId,
-                    ordinalNum: index + 1
+                    ordinalNum: index + 1,
+                    detail_id: row.detail_id ? row.detail_id : null,
+                    createdAt: row.createdAt ? row.createdAt : null
                 }
             });
             setRowList(list);
@@ -596,10 +680,11 @@ export default function AppointmentDetails() {
             })
             .then(async(result) => {
                 if(result.isConfirmed) {
-                    let detailsList = [];
+                    let list = [];
     
                     rowList.forEach(row => {
                         let obj = {};
+                        obj.detail_id = row.detail_id ? row.detail_id : null;
                         obj.appointment_id = appointment.appointment_id;
                         obj.service_id = null;
                         obj.quantity = null;
@@ -614,23 +699,25 @@ export default function AppointmentDetails() {
                         const description = descriptionList.find(description => description.rowId === row.rowId);
                         if(description) obj.description = description.description;
             
-                        if(obj.service_id && obj.quantity) detailsList.push(obj);
+                        if(obj.service_id && obj.quantity) list.push(obj);
                     });
     
-                    setIsLoading(true);
+                    setPageLoading(true);
                     const res = await appointmentAPI.saveDetails({
                         doctor_id: user_id,
                         appointment_id: appointment.appointment_id,
-                        detailsList
+                        detailsList: list
                     });
-                    setIsLoading(false);
+                    setPageLoading(false);
     
                     const {errCode, type} = res.data;
                     if(errCode === 0) {
                         toast.success("Lưu thành công");
+                        getAppointmentByID();
                     }
                     else if(errCode === 2 && type === "status") {
                         toast.error("Trạng thái lịch hẹn không hợp lệ");
+                        getAppointmentByID();
                     }
                     else if(errCode === 2 && type === "doctor") {
                         toast.error("Bạn không phải bác sĩ phụ trách");
@@ -647,21 +734,254 @@ export default function AppointmentDetails() {
     };
 
 
+    //XỬ LÝ XÁC NHẬN HOÀN THÀNH LỊCH HẸN TÁI KHÁM VÌ KHÔNG CÓ DỊCH VỤ MỚI PHÁT SINH
+    const handleConfirmDone = () => {
+        CustomSwal.fire({
+            title: <div>
+                <small><p>Lịch hẹn không phát sinh dịch vụ mới</p></small>
+                <span>
+                    <p className="fs-5 fw-normal text-dark">
+                        Xác nhận <b className="text-success">hoàn thành</b> lịch hẹn?
+                    </p>
+                </span>
+                <small>
+                    <p className="mb-0">Sau khi xác nhận sẽ 
+                        <span className="text-danger"> không thể</span> chỉnh sửa dịch vụ
+                    </p>
+                </small>
+            </div>,
+            confirmButtonText: "Xác nhận",
+            showCancelButton: true,
+            cancelButtonText: "Hủy",
+            customClass: {
+                confirmButton: "btn-primary shadow-none",
+                cancelButton: "btn-secondary-cancel shadow-none",
+            },
+        })
+        .then(async(result) => {
+            if(result.isConfirmed) {
+                let list = [];
+    
+                rowList.forEach(row => {
+                    let obj = {};
+                    obj.detail_id = row.detail_id;
+                    obj.description = null;
+
+                    const description = descriptionList.find(description => {
+                        return description.rowId === row.rowId;
+                    });
+                    obj.description = description.description;
+                    list.push(obj);
+                });
+
+                setPageLoading(true);
+                const res = await appointmentAPI.confirmDone({
+                    doctor_id: user_id,
+                    appointment_id: appointment.appointment_id,
+                    detailsList: list
+                });
+                setPageLoading(false);
+
+                const {errCode, type} = res.data;
+                if(errCode === 0) {
+                    toast.success("Xác nhận thành công");
+                    getAppointmentByID();
+                }
+                else if(errCode === 2 && type === "status") {
+                    toast.error("Trạng thái lịch hẹn không hợp lệ");
+                    getAppointmentByID();
+                }
+                else if(errCode === 2 && type === "doctor") {
+                    toast.error("Bạn không phải bác sĩ phụ trách");
+                }
+                else if(errCode === 2 && type === "details") {
+                    toast.error("Lịch hẹn chưa có dịch vụ");
+                }
+                else { //errCode === 1 || errCode === 5
+                    toast.error("Gửi yêu cầu thất bại");
+                };
+            };
+        });  
+    };
+
+
+    //XỬ LÝ CHỌN NÚT LƯU THÔNG TIN
+    const handleClickSaveButton = () => {
+
+        //lịch hẹn là đặt mới
+        if(appointment.type_id === 1) {
+            handleSaveDetails();
+        }
+
+        //nếu lịch hẹn là tái khám
+        else {
+
+            //tìm xem có dịch vụ mới không
+            const newService = selectedServices.filter(service => {
+                return service.createdAt !== appointment.createdAt;
+            });
+
+            //có dịch vụ mới -> chỉ lưu thông tin chi tiết
+            if(newService.length) {
+                const nullDescription = descriptionList.find(d => {
+                    return !d.description && d.createdAt === appointment.createdAt;
+                });
+                if(nullDescription) {
+                    toast.error("Dịch vụ tái khám chưa có mô tả");
+                }
+                else {
+                    handleSaveDetails();
+                };
+            }
+
+            //không có dịch vụ mới phát sinh -> lưu chi tiết và xác nhận hoàn thành
+            else {
+                const nullDescription = descriptionList.find(d => !d.description);
+                if(nullDescription) {
+                    toast.error("Dịch vụ tái khám chưa có mô tả");
+                }
+                else {
+                    handleConfirmDone();
+                };
+            };
+        };
+    };
+
+
+    //XỬ LÝ THAY ĐỔI LOẠI LỊCH HẸN
+    const handleChangeType = (type_id) => {
+        if(type_id === 1) {
+            setIsHidden(true);
+        }
+        else {
+            setIsHidden(false);
+            bookingModalForm.resetFields();
+        };
+    };
+
+
     //XỬ LÝ CHỌN SELECT INPUT NGÀY
     const handleChangeDate = async(date) => {
-        setIsLoading(true);
+        setModalLoading(true);
         const res = await scheduleAPI.getDoctorSchedulesByDate(user_id, date);
         setScheduleList(res.data.data);
         setSelectedSchedule(null);
         setIsActive(0);
-        setIsLoading(false);
+        setModalLoading(false);
     };
 
 
     //XỬ LÝ ĐẶT LỊCH HẸN MỚI
     const handleBookingAppointment = (values) => {
+        if(selectedSchedule) {
+            Swal.fire({
+                title: "Xác nhận đặt lịch hẹn?",
+                confirmButtonText: "Xác nhận",
+                showCancelButton: true,
+                cancelButtonText: "Hủy",
+                customClass: {
+                    title: "fs-5 fw-normal text-dark",
+                    confirmButton: "btn-primary shadow-none",
+                    cancelButton: "btn-secondary-cancel shadow-none",
+                },
+            })
+            .then(async(result) => {
+                if(result.isConfirmed) {
+
+                    //lấy các dịch vụ được gửi yêu cầu tái khám
+                    let reExamList = [];
+                    if(values.type_id === 2) {
+                        values.reExamServices.forEach(service_id => {
+                            const detail = detailsList.find(detail => detail.service_id === service_id);
+                            if(detail) {
+                                reExamList.push({
+                                    service_id: detail.service_id,
+                                    quantity: detail.Detail.quantity
+                                });
+                            };
+                        });
+                    };
+
+                    const {DoctorSchedule} = selectedSchedule;
+                    const appointmentInfo = {
+                        creator_id: user_id,
+                        type_id: values.type_id,
+                        doctor_schedule_id: DoctorSchedule.doctor_schedule_id,
+                        patient_id: appointment.Patient.patient_id,
+                        fullname: appointment.fullname,
+                        dob: appointment.dob,
+                        gender: appointment.gender,
+                        phone: appointment.phone,
+                        reExamServices: reExamList
+                    };
+        
+                    setModalLoading(true);
+                    const res = await appointmentAPI.booking(appointmentInfo);
+                    setModalLoading(false);
+        
+                    const {errCode, type} = res.data;
+                    if(errCode === 0) {
+                        toast.success("Gửi yêu cầu thành công");
+                        handleResetState(values.date);
+                        setBookingModalOpen(false);
+                    }
+                    else if(errCode === 2 && type === "status") {
+                        toast.error("Lịch làm việc chưa được duyệt");
+                        handleResetState(values.date);
+                    }  
+                    else if(errCode === 2 && type === "date") {
+                        toast.error("Không thể đặt lịch cho quá khứ");
+                        handleResetState(values.date);
+                        setBookingModalOpen(false);
+                    }   
+                    else if(errCode === 2 && type === "time") {
+                        toast.error("Đã qua thời gian của ca khám");
+                        handleResetState(values.date);
+                    }                    
+                    else if(errCode === 9) {
+                        toast.error("Lịch làm việc này không còn khả dụng");
+                        handleResetState(values.date);
+                    }
+                    else if(errCode === 10) {
+                        toast.error("Đã đạt giới hạn đặt 3 lịch hẹn/ngày");
+                        handleResetState(values.date);
+                        setBookingModalOpen(false);
+                    }
+                    else { //errCode === 1 || errCode === 5
+                        toast.error("Gửi yêu cầu thất bại");
+                        handleResetState(values.date);
+                    }; 
+                };
+            });
+        }
+        else {
+            toast.error("Bạn chưa chọn lịch làm việc");
+        };
+    };
+
+
+    //XỬ LÝ DOWNLOAD CHI TIẾT LỊCH HẸN
+    const handleDownloadDetails = () => {
+        const input = pdfRef.current;
+        html2canvas(input, {useCORS: true, scale: 2}).then(canvas => {
+            const imgData = canvas.toDataURL("image/png");
+            const pdf = new jsPDF("p", "mm", "a4", true);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const ratio = Math.min(pdfWidth/imgWidth, pdfHeight/imgHeight);
+            const imgX = (pdfWidth - imgWidth * ratio) / 2;
+            pdf.addImage(imgData, "PNG", imgX, null, imgWidth * ratio, imgHeight * ratio);
+            pdf.save(`ChiTietLichHen_${appointment.appointment_id}`);
+        });
+    };
+
+
+    //XỬ LÝ GỬI CHI TIẾT LỊCH HẸN TỚI EMAIL
+    const handleSendDetailsToEmail = () => {
         Swal.fire({
-            title: "Xác nhận đặt lịch hẹn?",
+            title: "Xác nhận gửi email?",
             confirmButtonText: "Xác nhận",
             showCancelButton: true,
             cancelButtonText: "Hủy",
@@ -671,56 +991,36 @@ export default function AppointmentDetails() {
                 cancelButton: "btn-secondary-cancel shadow-none",
             },
         })
-        .then(async(result) => {
+        .then((result) => {
             if(result.isConfirmed) {
-                const {DoctorSchedule} = selectedSchedule;
-                const appointmentInfo = {
-                    creator_id: user_id,
-                    type_id: values.type_id,
-                    doctor_schedule_id: DoctorSchedule.doctor_schedule_id,
-                    patient_id: appointment.Patient.patient_id,
-                    fullname: appointment.fullname,
-                    dob: appointment.dob,
-                    gender: appointment.gender,
-                    phone: appointment.phone
-                };
-    
-                setIsLoading(true);
-                const res = await appointmentAPI.booking(appointmentInfo);
-                setIsLoading(false);
-    
-                const {errCode, type} = res.data;
-                if(errCode === 0) {
-                    toast.success("Gửi yêu cầu thành công");
-                    handleResetState(values.date);
-                    setIsOpen(false);
-                }
-                else if(errCode === 2 && type === "status") {
-                    toast.error("Lịch làm việc chưa được duyệt");
-                    handleResetState(values.date);
-                }  
-                else if(errCode === 2 && type === "date") {
-                    toast.error("Không thể đặt lịch cho quá khứ");
-                    handleResetState(values.date);
-                    setIsOpen(false);
-                }   
-                else if(errCode === 2 && type === "time") {
-                    toast.error("Đã qua thời gian của ca khám");
-                    handleResetState(values.date);
-                }                    
-                else if(errCode === 9) {
-                    toast.error("Lịch làm việc này không còn khả dụng");
-                    handleResetState(values.date);
-                }
-                else if(errCode === 10) {
-                    toast.error("Đã đạt giới hạn đặt 3 lịch hẹn/ngày");
-                    handleResetState(values.date);
-                    setIsOpen(false);
-                }
-                else { //errCode === 1 || errCode === 5
-                    toast.error("Gửi yêu cầu thất bại");
-                    handleResetState(values.date);
-                }; 
+                const input = pdfRef.current;
+                html2canvas(input, {useCORS: true, scale: 2}).then(async canvas => {
+                    const imgData = canvas.toDataURL("image/png");
+                    const pdf = new jsPDF("p", "mm", "a4", true);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const imgWidth = canvas.width;
+                    const imgHeight = canvas.height;
+                    const ratio = Math.min(pdfWidth/imgWidth, pdfHeight/imgHeight);
+                    const imgX = (pdfWidth - imgWidth * ratio) / 2;
+                    pdf.addImage(imgData, "PNG", imgX, null, imgWidth * ratio, imgHeight * ratio);
+                    const data = pdf.output("datauristring");
+        
+                    setModalLoading(true);
+                    const res = await appointmentAPI.sendToEmail({
+                        patient_id: appointment.Patient.patient_id,
+                        filename: `ChiTietLichHen_${appointment.appointment_id}.pdf`,
+                        file: data
+                    });
+                    setModalLoading(false);
+        
+                    if(res.data.errCode === 0) {
+                        toast.success("Gửi thành công");
+                    }
+                    else { //errCode === 1
+                        toast.error("Gửi yêu cầu thất bại");
+                    };
+                });
             };
         });
     };
@@ -728,8 +1028,8 @@ export default function AppointmentDetails() {
 
     //XỬ LÝ RESET STATE CHO MODAL
     const handleResetState = (date) => {
-        modalForm.resetFields();
-        modalForm.setFieldsValue({
+        bookingModalForm.resetFields();
+        bookingModalForm.setFieldsValue({
             type_id: 2,
             date: date
         });
@@ -754,12 +1054,12 @@ export default function AppointmentDetails() {
         })
         .then(async(result) => {
             if(result.isConfirmed) {
-                setIsLoading(true);
+                setPageLoading(true);
                 const res = await appointmentAPI.cancel({
                     appointment_id: appointment.appointment_id,
                     employee_id: user_id
                 });
-                setIsLoading(false);
+                setPageLoading(false);
         
                 const {errCode} = res.data;
                 if(errCode === 0) {
@@ -768,6 +1068,7 @@ export default function AppointmentDetails() {
                 }
                 else if(errCode === 2) {
                     toast.error("Trạng thái lịch hẹn không phù hợp");
+                    getAppointmentByID();
                 }
                 else { //errCode === 1 || errCode === 5
                     toast.error("Gửi yêu cầu thất bại");
@@ -779,18 +1080,18 @@ export default function AppointmentDetails() {
 
     return (
         <Vertical>
-            <Spin tip="Đang tải..." spinning={isLoading}>
-                <div className="container-fluid pt-4">
-                    <div className="row bg-light rounded mx-0 mb-4">
-                        <div className="col-md">
-                            <div className="rounded p-4 bg-secondary">
-                                <div className="row mb-3">
-                                    <div className="col-md">
-                                        <Link to="/lich-hen" className="text-decoration-none text-primary">
-                                            <small><FontAwesomeIcon icon={faChevronLeft}/> Quay lại</small>
-                                        </Link>
-                                    </div>
+            <div className="container-fluid pt-4">
+                <div className="row bg-light rounded mx-0 mb-4">
+                    <div className="col-md">
+                        <div className="rounded p-4 bg-secondary">
+                            <div className="row mb-3">
+                                <div className="col-md">
+                                    <Link to="/lich-hen" className="text-decoration-none text-primary">
+                                        <small><FontAwesomeIcon icon={faChevronLeft}/> Quay lại</small>
+                                    </Link>
                                 </div>
+                            </div>
+                            <Spin tip="Đang tải..." spinning={pageLoading}>
                                 <div className="row">
                                     <div className="col-md-4 mt-4 d-flex align-items-center justify-content-center">
                                         <p className="mb-0">
@@ -810,7 +1111,7 @@ export default function AppointmentDetails() {
                                     <div className="col-md-4 mt-4 d-flex align-items-center justify-content-center">
                                         <h4 className="text-uppercase text-primary mb-0">Chi tiết lịch hẹn</h4>
                                     </div>
-                                    <div className="col-md-4 mt-4 d-flex align-items-center justify-content-center">
+                                    <div className="col-md-4 mt-4 d-flex align-items-center justify-content-center appointment-details-col-btn">
                                         {
                                             prefix === "bs"
                                             ?
@@ -818,43 +1119,81 @@ export default function AppointmentDetails() {
                                                 {
                                                     appointment.status === 1
                                                     ?
-                                                    <Button
-                                                        className="btn-primary px-4 me-2"
-                                                        onClick={handleSaveDetails}
-                                                    >
-                                                        Lưu thông tin
-                                                    </Button>
+                                                    <div className="save-btn">
+                                                        <Button
+                                                            className="btn-primary px-4 me-2"
+                                                            onClick={handleClickSaveButton}
+                                                        >
+                                                            <span>Lưu thông tin</span>
+                                                        </Button>
+                                                    </div>
                                                     :
                                                     <></>
                                                 }
-                                                <Button
-                                                    className="px-4"
-                                                    onClick={() => {
-                                                        setIsOpen(true);
-                                                        handleChangeDate(dateList[0].value);
-                                                    }}
-                                                >
-                                                    Đặt lịch hẹn
-                                                </Button>
+                                                {
+                                                    detailsList
+                                                    ?
+                                                    <>
+                                                        <div className={`${appointment.status === 1 ? "print-btn" : ""}`}>
+                                                            <Button
+                                                                className="px-4 me-2"
+                                                                onClick={() => {
+                                                                    setPrintModalOpen(true);
+                                                                }}
+                                                            >
+                                                                <span>Xuất file</span>
+                                                            </Button>                                             
+                                                        </div>
+                                                        <div className={`${appointment.status === 1 ? "booking-btn" : ""}`}>
+                                                            <Button
+                                                                className="px-4"
+                                                                onClick={() => {
+                                                                    setBookingModalOpen(true);
+                                                                    handleChangeDate(dateList[0].value);
+                                                                }}
+                                                            >
+                                                                <span>Đặt lịch hẹn</span>
+                                                            </Button>
+                                                        </div>
+                                                    </>
+                                                    :
+                                                    <></>
+                                                }
                                             </>
                                             :
                                             appointment.status === 1
                                             ?
                                                 detailsList
                                                 ?
-                                                <Link
-                                                    to={`/hoa-don/lap-hoa-don/${appointment.Patient.patient_id}`}
-                                                    state={{
-                                                        appointment,
-                                                        categories: selectedCategories,
-                                                        services: selectedServices,
-                                                        quantities: selectedQuantities
-                                                    }}
-                                                >
-                                                    <Button className="btn-primary px-4 me-2">
-                                                        Lập hóa đơn
+                                                <>
+                                                    <Link
+                                                        to={`/hoa-don/lap-hoa-don/${appointment.Patient.patient_id}`}
+                                                        state={{
+                                                            appointment,
+                                                            categories: selectedCategories.filter(category => {
+                                                                return category.createdAt !== appointment.createdAt;
+                                                            }),
+                                                            services: selectedServices.filter(service => {
+                                                                return service.createdAt !== appointment.createdAt;
+                                                            }),
+                                                            quantities: selectedQuantities.filter(quantity => {
+                                                                return quantity.createdAt !== appointment.createdAt;
+                                                            })
+                                                        }}
+                                                    >
+                                                        <Button className="btn-primary px-4 me-2">
+                                                            Lập hóa đơn
+                                                        </Button>
+                                                    </Link>
+                                                    <Button
+                                                        className="px-4 me-2"
+                                                        onClick={() => {
+                                                            setPrintModalOpen(true);
+                                                        }}
+                                                    >
+                                                        Xuất file
                                                     </Button>
-                                                </Link>
+                                                </>
                                                 :
                                                 <Button
                                                     className="px-4"
@@ -965,19 +1304,19 @@ export default function AppointmentDetails() {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </Spin>
                         </div>
                     </div>
                 </div>
-            </Spin>
+            </div>
             <Modal
-                open={isOpen}
+                open={bookingModalOpen}
                 onCancel={() => {
-                    setIsOpen(false);
+                    setBookingModalOpen(false);
                     setSelectedSchedule(null);
                     setIsActive(0);
                     handleChangeDate(dateList[0].value);
-                    modalForm.setFieldsValue({
+                    bookingModalForm.setFieldsValue({
                         type_id: 2,
                         date: dateList[0].value
                     });
@@ -985,13 +1324,13 @@ export default function AppointmentDetails() {
                 okButtonProps={{hidden: true}}
                 cancelButtonProps={{hidden: true}}
             >
-                <Spin tip="Đang tải..." spinning={isLoading}>
+                <Spin tip="Đang tải..." spinning={modalLoading}>
                     <div className="text-center">
                         <h5 className="text-uppercase text-primary mb-0">Gửi yêu cầu đặt lịch hẹn</h5>
                         <hr/>
                     </div>
                     <Form
-                        form={modalForm}
+                        form={bookingModalForm}
                         layout="vertical"
                         initialValues={{
                             type_id: 2,
@@ -1002,7 +1341,9 @@ export default function AppointmentDetails() {
                         <div className="row">
                             <div className="col-md-6 mt-2">
                                 <Form.Item label="Loại lịch hẹn" name="type_id">
-                                    <Radio.Group>
+                                    <Radio.Group
+                                        onChange={e => handleChangeType(e.target.value)}
+                                    >
                                         <Radio value={2}>Tái khám</Radio>
                                         <Radio value={1}>Đặt mới</Radio>
                                     </Radio.Group>
@@ -1018,9 +1359,9 @@ export default function AppointmentDetails() {
                                 </Form.Item>
                             </div>
                         </div>
-                        <div className="row">
-                            <div className="col-md mt-2" style={{height: "220px"}}>
-                                <p className="mb-0">Ca khám</p>
+                        <div className="row mb-4">
+                            <div className="col-md mt-2">
+                                <label>Ca khám</label>
                                 {
                                     scheduleList.length
                                     ?
@@ -1056,11 +1397,168 @@ export default function AppointmentDetails() {
                                 }
                             </div>
                         </div>
+                        {
+                            isHidden
+                            ?
+                            <></>
+                            :
+                            <div className="row">
+                                <div className="col-md mt-2">
+                                    <Form.Item
+                                        label="Dịch vụ tái khám"
+                                        name="reExamServices"
+                                        rules={[{
+                                            required: true,
+                                            message: "Dịch vụ tái khám không được rỗng"
+                                        }]}
+                                    >
+                                        <Checkbox.Group style={{width: '100%'}}>
+                                            <Row>
+                                                {
+                                                    detailsList?.map((detail, index) => {
+                                                        return (
+                                                            <Col key={index} className="mt-2" span={24}>
+                                                                <Checkbox value={detail.service_id}>
+                                                                    {
+                                                                        `${CommonUtils.capitalizeEachWord(detail.Category.category_name)} - 
+                                                                        ${CommonUtils.capitalizeEachWord(detail.service_name)}`
+                                                                    }
+                                                                </Checkbox>
+                                                                <br/>
+                                                            </Col>
+                                                        )
+                                                    })
+                                                }
+                                            </Row>
+                                        </Checkbox.Group>
+                                    </Form.Item>
+                                </div>
+                            </div>
+                        }
                         <div className="mt-2">
                             <Button htmlType="submit" className="btn-primary px-4 me-2">Đặt lịch hẹn</Button>
                             <Button htmlType="reset" className="px-4">Reset</Button>
                         </div>
                     </Form>
+                </Spin>
+            </Modal>
+            <Modal
+                open={printModalOpen}
+                onCancel={() => setPrintModalOpen(false)}
+                width={793}
+                okButtonProps={{hidden: true}}
+                cancelButtonProps={{hidden: true}}
+            >
+                <Spin tip="Đang tải..." spinning={modalLoading}>
+                    <div ref={pdfRef} className="w-100 px-5 pt-5">
+                        <div className="row">
+                            <div className="col-md-6 mb-4">
+                                <img alt="" src={process.env.REACT_APP_LOGO} style={{width: "200px"}}/>
+                            </div>
+                            <div className="col-md-6 mb-4 text-end">
+                                <small>180 Cao Lỗ, Phường 04, Quận 08, TP.HCM</small><br/>
+                                <small>076 1234 567</small>
+                            </div>
+                        </div>
+                        <div className="row">
+                            <div className="col-md">
+                                <div className="text-center">
+                                    <h4 className="text-uppercase mb-4"><b>Chi tiết lịch hẹn</b></h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="row">
+                            <div className="col-md-6 d-flex mt-4">
+                                <div style={{width: "150px"}}>
+                                    <p><b>Mã bệnh nhân:</b></p>
+                                    <p><b>Họ và tên:</b></p>
+                                    <p><b>Ngày sinh:</b></p>
+                                    <p><b>Giới tính:</b></p>
+                                    <p><b>Số điện thoại:</b></p>
+                                </div>
+                                <div>
+                                    <p>{appointment.Patient.patient_id.toUpperCase()}</p>
+                                    <p>{appointment.fullname}</p>
+                                    <p>{moment(appointment.dob).format("DD-MM-YYYY")}</p>
+                                    <p>{appointment.gender ? "Nam" : "Nữ"}</p>
+                                    <p>{appointment.phone}</p>
+                                </div>
+                            </div>
+                            <div className="col-md-6 d-flex mt-4">
+                                <div style={{width: "150px"}}>
+                                    <p><b>Mã lịch hẹn:</b></p>
+                                    <p><b>Loại:</b></p>
+                                    <p><b>Ngày hẹn:</b></p>
+                                    <p><b>Ca khám:</b></p>
+                                    <p><b>Bác sĩ phụ trách:</b></p>
+                                </div>
+                                <div>
+                                    <p>{appointment.appointment_id.toUpperCase()}</p>
+                                    <p>{appointment.Type.type_name}</p>
+                                    <p>{moment(appointment.DoctorSchedule.Schedule.date).format("DD-MM-YYYY")}</p>
+                                    <p>{appointment.DoctorSchedule.Schedule.Session.time}</p>
+                                    <p>{appointment.DoctorSchedule.Doctor.fullname}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="row">
+                            <div className="col-md mt-4">
+                                <div className="table-responsive">
+                                    <Table
+                                        columns={[
+                                            {
+                                                ...readOnlyColumns[1],
+                                                width: "50px"
+                                            },
+                                            {
+                                                ...readOnlyColumns[2],
+                                                width: "200px"
+                                            },
+                                            {
+                                                ...readOnlyColumns[3],
+                                                width: "200px"
+                                            },
+                                            {
+                                                ...readOnlyColumns[4],
+                                                title: "SL",
+                                                width: "50px"
+                                            },
+                                            {
+                                                ...readOnlyColumns[5],
+                                                width: "150px"
+                                            }
+                                        ]}
+                                        dataSource={rowList}
+                                        rowKey={readOnlyColumns[0].dataIndex}
+                                        bordered
+                                        pagination={false}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="px-5">
+                        <hr/>
+                        <div className="mt-4 d-flex justify-content-center">
+                            <Button
+                                className="me-2"
+                                style={{width: "150px"}}
+                                onClick={handleDownloadDetails}
+                            >
+                                Tải xuống
+                            </Button>
+                            <ReactToPrint
+                                trigger={() => <Button className="btn-primary me-2" style={{width: "150px"}}>In phiếu</Button>}
+                                content={() => pdfRef.current}
+                            />
+                            <Button
+                                style={{width: "150px"}}
+                                onClick={handleSendDetailsToEmail}
+                            >
+                                Gửi email
+                            </Button>
+                        </div>
+                    </div>
                 </Spin>
             </Modal>
         </Vertical>
