@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { Link, NavLink } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import Swal from 'sweetalert2';
+import toast from 'react-hot-toast';
+
 import {
 	faUser,
+	faSignOut,
 	faList,
 	faCalendarAlt,
 	faFileInvoiceDollar,
@@ -12,6 +16,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import employeeAPI from '../../services/employeeAPI';
 import doctorAPI from '../../services/doctorAPI';
+import Cookies from 'js-cookie';
+import { setUserInfo } from '../../slices/userSlice';
 
 export default function Sidebar() {
 	//KHAI BÁO BIẾN
@@ -19,6 +25,8 @@ export default function Sidebar() {
 	const togglerStatus = useSelector((state) => state.togglerStatus);
 	const user_id = useSelector((state) => state.user.user.user_id);
 	const prefix = user_id.slice(0, 2);
+	const dispatch = useDispatch();
+	const navigate = useNavigate();
 
 	//CALL API
 	useEffect(() => {
@@ -50,7 +58,27 @@ export default function Sidebar() {
 				break;
 		}
 	};
-
+	const handleLogout = () => {
+		Swal.fire({
+			title: 'Bạn có muốn đăng xuất?',
+			confirmButtonText: 'Xác nhận',
+			showCancelButton: true,
+			cancelButtonText: 'Hủy',
+			customClass: {
+				title: 'fs-5 fw-normal text-dark',
+				confirmButton: 'btn-primary shadow-none',
+				cancelButton: 'btn-secondary-cancel shadow-none',
+			},
+		}).then(async (result) => {
+			if (result.isConfirmed) {
+				Cookies.remove('refreshToken');
+				dispatch(setUserInfo({ user: null, login: false }));
+				localStorage.setItem('accessToken', null);
+				navigate('/');
+				toast.success('Đăng xuất thành công');
+			}
+		});
+	};
 	return (
 		<div className={`sidebar pe-4 pb-3 ${togglerStatus ? 'open' : ''}`}>
 			<nav className="navbar bg-secondary navbar-dark">
@@ -69,7 +97,7 @@ export default function Sidebar() {
 							alt=""
 							style={{ width: '40px', height: '40px' }}
 						/>
-						<div className="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+						<div className="bg-success rounded-circle border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
 					</div>
 					<div className="ms-3">
 						<h6 className="mb-0 text-dark">
@@ -111,12 +139,14 @@ export default function Sidebar() {
 						<></>
 					)}
 					{prefix === 'qt' || prefix === 'lt' || prefix === 'bs' ? (
-						<NavLink to="/benh-nhan" className="nav-item nav-link">
-							<i className="me-2">
-								<FontAwesomeIcon icon={faUser} />
-							</i>
-							Bệnh nhân
-						</NavLink>
+						<>
+							<NavLink to="/benh-nhan" className="nav-item nav-link">
+								<i className="me-2">
+									<FontAwesomeIcon icon={faUser} />
+								</i>
+								Bệnh nhân
+							</NavLink>
+						</>
 					) : (
 						<></>
 					)}
@@ -176,7 +206,18 @@ export default function Sidebar() {
 							</NavLink>
 						</>
 					) : (
-						<></>
+						<>
+							<div
+								onClick={handleLogout}
+								className="nav-item nav-link"
+								style={{ cursor: 'pointer' }}
+							>
+								<i className="me-2">
+									<FontAwesomeIcon icon={faSignOut} />
+								</i>
+								Đăng xuất
+							</div>
+						</>
 					)}
 				</div>
 			</nav>

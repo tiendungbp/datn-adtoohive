@@ -99,6 +99,7 @@ export default function EmployeeList() {
 			});
 			setSearchList(list);
 		}
+        // eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [employeeList]);
 
 	//XỬ LÝ LẤY TẤT CẢ NHÂN VIÊN

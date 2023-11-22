@@ -84,6 +84,7 @@ export default function Services() {
 		getAllServices();
 		getAllCategories();
 		getActiveCategories();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [data, form]);
 
 	//NẾU SỬA KHI ĐANG CÓ SEARCH LIST THÌ UPDATE LẠI SEARCH LIST
@@ -98,6 +99,7 @@ export default function Services() {
 			});
 			setSearchList(list);
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [serviceList]);
 
 	//XỬ LÝ LẤY TẤT CẢ DỊCH VỤ

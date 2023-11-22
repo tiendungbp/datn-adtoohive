@@ -77,6 +77,7 @@ export default function Categories() {
 			});
 			setSearchList(list);
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [categoryList]);
 
 	//XỬ LÝ LẤY TẤT CẢ DANH MỤC
