@@ -1,4 +1,4 @@
-import axios from "axios";
+
 import axiosInstance from "../utils/customAxios";
 
 const baseURL = `${process.env.REACT_APP_API_URL}/api/service`;

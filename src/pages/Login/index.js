@@ -57,7 +57,9 @@ export default function Login() {
 						<div className="bg-secondary rounded p-4 p-sm-5 my-4 mx-3 shadow-container">
 							<Spin tip="Đang tải..." spinning={pageLoading}>
 								<div className="d-flex align-items-center justify-content-between mb-3">
-									<h3 className="text-primary">Toothhive</h3>
+									<h3 className="text-primary font-bold">
+										Phòng khám nha khoa Toothhive
+									</h3>
 								</div>
 								<Form
 									layout="vertical"

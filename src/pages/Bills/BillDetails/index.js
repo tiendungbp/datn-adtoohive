@@ -24,7 +24,8 @@ export default function BillDetails() {
 
     //LẤY ID
     const {patient_id, bill_id} = useParams();
-    const user_id = useSelector(state => state.user.user.user_id); //id lễ tân
+    const user_id = useSelector(state => state.user.user.user_id); 
+    //id lễ tân
 
 
     //NAVIGATE, LOADING, USEREF, OPEN MODAL
@@ -976,7 +977,7 @@ export default function BillDetails() {
                                 <img alt="" src={process.env.REACT_APP_LOGO} style={{width: "200px"}}/>
                             </div>
                             <div className="col-md-6 mb-4 text-end">
-                                <small>180 Cao Lỗ, Phường 04, Quận 08, TP.HCM</small><br/>
+                                <small>FPT Polytechnic, TP.HCM</small><br/>
                                 <small>076 1234 567</small>
                             </div>
                         </div>

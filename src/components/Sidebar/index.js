@@ -204,6 +204,16 @@ export default function Sidebar() {
 								</i>
 								NFC
 							</NavLink>
+							<div
+								onClick={handleLogout}
+								className="nav-item nav-link"
+								style={{ cursor: 'pointer' }}
+							>
+								<i className="me-2">
+									<FontAwesomeIcon icon={faSignOut} />
+								</i>
+								Đăng xuất
+							</div>
 						</>
 					) : (
 						<>

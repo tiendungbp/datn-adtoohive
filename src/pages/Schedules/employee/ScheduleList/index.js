@@ -9,7 +9,6 @@ import { faCaretLeft, faCaretRight } from "@fortawesome/free-solid-svg-icons";
 import { faCheckCircle } from "@fortawesome/free-regular-svg-icons";
 import { Vertical } from "../../../../utils/AnimatedPage";
 import moment from "moment";
-import localization from "moment/locale/vi";
 import DataTable from "../../../../components/DataTable";
 import scheduleAPI from "../../../../services/scheduleAPI";
 import CommonUtils from "../../../../utils/commonUtils";
