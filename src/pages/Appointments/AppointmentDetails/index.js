@@ -1509,14 +1509,21 @@ export default function AppointmentDetails() {
 				<Spin tip="Đang tải..." spinning={modalLoading}>
 					<div ref={pdfRef} className="w-100 px-5 pt-5">
 						<div className="row">
-							<div className="col-md-6 mb-4">
+							<div className="col-md-4 mb-4">
 								<img
 									alt=""
 									src={process.env.REACT_APP_LOGO}
 									style={{ width: '200px' }}
 								/>
 							</div>
-							<div className="col-md-6 mb-4 text-end">
+							<div className="col-md-4 mb-4 text-center">
+								<img
+									alt=""
+									src="https://res.cloudinary.com/deldfzq9e/image/upload/v1700871567/l2c12x9nvcyeemk3tqul.png"
+									style={{ width: '100px', height: '100px' }}
+								/>
+							</div>
+							<div className="col-md-4 mb-4 text-end">
 								<small>FPT Polytechnic, TP.HCM</small>
 								<br />
 								<small>076 1234 567</small>
