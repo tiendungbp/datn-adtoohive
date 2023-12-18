@@ -1131,7 +1131,7 @@ export default function AppointmentDetails() {
 													<>
 														<div
 															className={`${
-																appointment.status === 1 ? 'print-btn' : ''
+																appointment.status === 3 ? 'print-btn' : ''
 															}`}
 														>
 															<Button
@@ -1145,7 +1145,7 @@ export default function AppointmentDetails() {
 														</div>
 														<div
 															className={`${
-																appointment.status === 1 ? 'booking-btn' : ''
+																appointment.status === 3 ? 'booking-btn' : ''
 															}`}
 														>
 															<Button
