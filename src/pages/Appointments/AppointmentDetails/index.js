@@ -530,7 +530,6 @@ export default function AppointmentDetails() {
 
 		if (res.data.errCode === 0) {
 			await setAppointment(res.data.data);
-			console.log(appointment);
 			if (res.data.data.details) await setDetailsList(res.data.data.details);
 		} else {
 			navigate('/lich-hen');
