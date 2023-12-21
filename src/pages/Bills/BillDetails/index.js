@@ -2,18 +2,9 @@ import './index.scss';
 import { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import {
-	Button,
-	Spin,
-	Table,
-	Select,
-	Input,
-	Popconfirm,
-	InputNumber,
-	Modal,
-} from 'antd';
+import { Button, Spin, Table, Select, Modal } from 'antd';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
+import { faChevronLeft } from '@fortawesome/free-solid-svg-icons';
 import { Vertical } from '../../../utils/AnimatedPage';
 import toast from 'react-hot-toast';
 import moment from 'moment';
@@ -23,8 +14,8 @@ import jsPDF from 'jspdf';
 import ReactToPrint from 'react-to-print';
 import CommonUtils from '../../../utils/commonUtils';
 import patientAPI from '../../../services/patientAPI';
-import categoryAPI from '../../../services/categoryAPI';
-import serviceAPI from '../../../services/serviceAPI';
+// import categoryAPI from '../../../services/categoryAPI';
+// import serviceAPI from '../../../services/serviceAPI';
 import billAPI from '../../../services/billAPI';
 
 export default function BillDetails() {
@@ -41,8 +32,8 @@ export default function BillDetails() {
 	const [isOpen, setIsOpen] = useState(false);
 
 	//DỮ LIỆU TỪ API
-	const [categoryList, setCategoryList] = useState([]);
-	const [serviceList, setServiceList] = useState([]);
+	// const [categoryList, setCategoryList] = useState([]);
+	// const [serviceList, setServiceList] = useState([]);
 	const [detailsList, setDetailsList] = useState(null);
 
 	//STATE
@@ -54,11 +45,12 @@ export default function BillDetails() {
 	//LẤY DỮ LIỆU KHI CHỌN LẬP HÓA ĐƠN TỪ TRANG CHI TIẾT LỊCH HẸN
 	const { state } = useLocation();
 	const appointment = state?.appointment ? state.appointment : null;
-	let stateRowCount, stateRowList;
+	// let stateRowCount, stateRowList;
+	let stateRowList;
 	let stateCategories, stateServices, stateQuantities;
 
 	if (state) {
-		stateRowCount = state.categories.length;
+		// stateRowCount = state.categories.length;
 		stateRowList = state.categories.map((category, index) => {
 			return {
 				rowId: index + 1,
@@ -89,7 +81,7 @@ export default function BillDetails() {
 	}
 
 	//SỐ HÀNG CỦA TABLE
-	const [rowCount, setRowCount] = useState(state ? stateRowCount : 1);
+	// const [rowCount, setRowCount] = useState(state ? stateRowCount : 1);
 	const [rowList, setRowList] = useState(
 		state ? stateRowList : [{ rowId: 1, ordinalNum: 1 }],
 	);
@@ -106,189 +98,189 @@ export default function BillDetails() {
 	);
 
 	//ĐỊNH DẠNG DATATABLE
-	const editableColumns = [
-		{
-			title: 'STT',
-			dataIndex: 'ordinalNum',
-			align: 'center',
-			width: '50px',
-		},
-		{
-			title: 'Danh mục',
-			width: '250px',
-			render: (obj) => (
-				<Select
-					size="large"
-					className="w-100"
-					options={categoryList.map((category) => {
-						return {
-							value: category.category_id,
-							label: CommonUtils.capitalizeEachWord(category.category_name),
-						};
-					})}
-					value={
-						selectedCategories.length
-							? selectedCategories.find(
-									(category) => category.rowId === obj.rowId,
-							  )
-								? selectedCategories.find(
-										(category) => category.rowId === obj.rowId,
-								  ).category_id
-								: ''
-							: ''
-					}
-					onChange={(value) => handleChooseCategory(obj.rowId, value)}
-				/>
-			),
-		},
-		{
-			title: 'Dịch vụ',
-			width: '250px',
-			render: (obj) => (
-				<Select
-					size="large"
-					className="w-100"
-					disabled={
-						selectedCategories.find((category) => category.rowId === obj.rowId)
-							? false
-							: true
-					}
-					options={
-						selectedCategories.find((category) => category.rowId === obj.rowId)
-							? serviceList.filter((item) => item.rowId === obj.rowId)[0]
-								? serviceList
-										.filter((item) => item.rowId === obj.rowId)[0]
-										.list.map((service) => {
-											return {
-												value: service.service_id,
-												label: CommonUtils.capitalizeEachWord(
-													service.service_name,
-												),
-												service: service,
-											};
-										})
-								: []
-							: []
-					}
-					value={
-						selectedServices.length
-							? selectedServices.find((service) => service.rowId === obj.rowId)
-								? selectedServices.find(
-										(service) => service.rowId === obj.rowId,
-								  ).service_id
-								: ''
-							: ''
-					}
-					onChange={(value, data) =>
-						handleChooseService(obj.rowId, value, data.service.price)
-					}
-				/>
-			),
-		},
-		{
-			title: 'Số lượng',
-			align: 'center',
-			width: '100px',
-			render: (obj) => (
-				<InputNumber
-					size="large"
-					type="number"
-					min={1}
-					className="w-100"
-					defaultValue={1}
-					disabled={
-						selectedServices.find((service) => service.rowId === obj.rowId)
-							? false
-							: true
-					}
-					value={
-						selectedQuantities.length
-							? selectedQuantities.find(
-									(quantity) => quantity.rowId === obj.rowId,
-							  )
-								? selectedQuantities.find(
-										(quantity) => quantity.rowId === obj.rowId,
-								  ).quantity
-								: ''
-							: ''
-					}
-					onChange={(value) => handleChooseQuantity(obj.rowId, value)}
-				/>
-			),
-		},
-		{
-			title: 'Đơn giá',
-			render: (obj) => (
-				<Input
-					size="large"
-					className="w-100"
-					readOnly
-					disabled={
-						selectedServices.find((service) => service.rowId === obj.rowId)
-							? false
-							: true
-					}
-					value={
-						selectedServices.length
-							? selectedServices.find((service) => service.rowId === obj.rowId)
-								? CommonUtils.VND.format(
-										selectedServices.find(
-											(service) => service.rowId === obj.rowId,
-										).price,
-								  )
-								: ''
-							: ''
-					}
-				/>
-			),
-		},
-		{
-			title: 'Thành tiền',
-			render: (obj) => (
-				<Input
-					size="large"
-					className="w-100"
-					readOnly
-					disabled={
-						selectedServices.find((service) => service.rowId === obj.rowId)
-							? false
-							: true
-					}
-					value={
-						selectedServices.length
-							? selectedServices.find((service) => service.rowId === obj.rowId)
-								? CommonUtils.VND.format(
-										selectedServices.find((service) => {
-											return service.rowId === obj.rowId;
-										}).price *
-											selectedQuantities.find((quantity) => {
-												return quantity.rowId === obj.rowId;
-											}).quantity,
-								  )
-								: ''
-							: ''
-					}
-				/>
-			),
-		},
-		{
-			title: 'Xóa',
-			align: 'center',
-			width: '50px',
-			render: (obj) => (
-				<Popconfirm
-					title="Bạn có muốn xóa?"
-					cancelText="Hủy"
-					okText="Xóa"
-					onConfirm={() => handleDeleteRow(obj.rowId)}
-				>
-					<Button>
-						<FontAwesomeIcon icon={faTrashAlt} className="text-primary" />
-					</Button>
-				</Popconfirm>
-			),
-		},
-	];
+	// const editableColumns = [
+	// 	{
+	// 		title: 'STT',
+	// 		dataIndex: 'ordinalNum',
+	// 		align: 'center',
+	// 		width: '50px',
+	// 	},
+	// 	{
+	// 		title: 'Danh mục',
+	// 		width: '250px',
+	// 		render: (obj) => (
+	// 			<Select
+	// 				size="large"
+	// 				className="w-100"
+	// 				options={categoryList.map((category) => {
+	// 					return {
+	// 						value: category.category_id,
+	// 						label: CommonUtils.capitalizeEachWord(category.category_name),
+	// 					};
+	// 				})}
+	// 				value={
+	// 					selectedCategories.length
+	// 						? selectedCategories.find(
+	// 								(category) => category.rowId === obj.rowId,
+	// 						  )
+	// 							? selectedCategories.find(
+	// 									(category) => category.rowId === obj.rowId,
+	// 							  ).category_id
+	// 							: ''
+	// 						: ''
+	// 				}
+	// 				onChange={(value) => handleChooseCategory(obj.rowId, value)}
+	// 			/>
+	// 		),
+	// 	},
+	// 	{
+	// 		title: 'Dịch vụ',
+	// 		width: '250px',
+	// 		render: (obj) => (
+	// 			<Select
+	// 				size="large"
+	// 				className="w-100"
+	// 				disabled={
+	// 					selectedCategories.find((category) => category.rowId === obj.rowId)
+	// 						? false
+	// 						: true
+	// 				}
+	// 				options={
+	// 					selectedCategories.find((category) => category.rowId === obj.rowId)
+	// 						? serviceList.filter((item) => item.rowId === obj.rowId)[0]
+	// 							? serviceList
+	// 									.filter((item) => item.rowId === obj.rowId)[0]
+	// 									.list.map((service) => {
+	// 										return {
+	// 											value: service.service_id,
+	// 											label: CommonUtils.capitalizeEachWord(
+	// 												service.service_name,
+	// 											),
+	// 											service: service,
+	// 										};
+	// 									})
+	// 							: []
+	// 						: []
+	// 				}
+	// 				value={
+	// 					selectedServices.length
+	// 						? selectedServices.find((service) => service.rowId === obj.rowId)
+	// 							? selectedServices.find(
+	// 									(service) => service.rowId === obj.rowId,
+	// 							  ).service_id
+	// 							: ''
+	// 						: ''
+	// 				}
+	// 				onChange={(value, data) =>
+	// 					handleChooseService(obj.rowId, value, data.service.price)
+	// 				}
+	// 			/>
+	// 		),
+	// 	},
+	// 	{
+	// 		title: 'Số lượng',
+	// 		align: 'center',
+	// 		width: '100px',
+	// 		render: (obj) => (
+	// 			<InputNumber
+	// 				size="large"
+	// 				type="number"
+	// 				min={1}
+	// 				className="w-100"
+	// 				defaultValue={1}
+	// 				disabled={
+	// 					selectedServices.find((service) => service.rowId === obj.rowId)
+	// 						? false
+	// 						: true
+	// 				}
+	// 				value={
+	// 					selectedQuantities.length
+	// 						? selectedQuantities.find(
+	// 								(quantity) => quantity.rowId === obj.rowId,
+	// 						  )
+	// 							? selectedQuantities.find(
+	// 									(quantity) => quantity.rowId === obj.rowId,
+	// 							  ).quantity
+	// 							: ''
+	// 						: ''
+	// 				}
+	// 				onChange={(value) => handleChooseQuantity(obj.rowId, value)}
+	// 			/>
+	// 		),
+	// 	},
+	// 	{
+	// 		title: 'Đơn giá',
+	// 		render: (obj) => (
+	// 			<Input
+	// 				size="large"
+	// 				className="w-100"
+	// 				readOnly
+	// 				disabled={
+	// 					selectedServices.find((service) => service.rowId === obj.rowId)
+	// 						? false
+	// 						: true
+	// 				}
+	// 				value={
+	// 					selectedServices.length
+	// 						? selectedServices.find((service) => service.rowId === obj.rowId)
+	// 							? CommonUtils.VND.format(
+	// 									selectedServices.find(
+	// 										(service) => service.rowId === obj.rowId,
+	// 									).price,
+	// 							  )
+	// 							: ''
+	// 						: ''
+	// 				}
+	// 			/>
+	// 		),
+	// 	},
+	// 	{
+	// 		title: 'Thành tiền',
+	// 		render: (obj) => (
+	// 			<Input
+	// 				size="large"
+	// 				className="w-100"
+	// 				readOnly
+	// 				disabled={
+	// 					selectedServices.find((service) => service.rowId === obj.rowId)
+	// 						? false
+	// 						: true
+	// 				}
+	// 				value={
+	// 					selectedServices.length
+	// 						? selectedServices.find((service) => service.rowId === obj.rowId)
+	// 							? CommonUtils.VND.format(
+	// 									selectedServices.find((service) => {
+	// 										return service.rowId === obj.rowId;
+	// 									}).price *
+	// 										selectedQuantities.find((quantity) => {
+	// 											return quantity.rowId === obj.rowId;
+	// 										}).quantity,
+	// 							  )
+	// 							: ''
+	// 						: ''
+	// 				}
+	// 			/>
+	// 		),
+	// 	},
+	// 	{
+	// 		title: 'Xóa',
+	// 		align: 'center',
+	// 		width: '50px',
+	// 		render: (obj) => (
+	// 			<Popconfirm
+	// 				title="Bạn có muốn xóa?"
+	// 				cancelText="Hủy"
+	// 				okText="Xóa"
+	// 				onConfirm={() => handleDeleteRow(obj.rowId)}
+	// 			>
+	// 				<Button>
+	// 					<FontAwesomeIcon icon={faTrashAlt} className="text-primary" />
+	// 				</Button>
+	// 			</Popconfirm>
+	// 		),
+	// 	},
+	// ];
 	const readOnlyColumns = [
 		{
 			title: 'STT',
@@ -381,7 +373,7 @@ export default function BillDetails() {
 			),
 		},
 	];
-	const columns = bill_id ? readOnlyColumns : editableColumns;
+	const columns = bill_id ? readOnlyColumns : readOnlyColumns;
 
 	//CALL API
 	useEffect(() => {
@@ -390,12 +382,13 @@ export default function BillDetails() {
 		getPatientByID();
 		getActiveCategories();
 		if (bill_id) getBillByID();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [bill_id]);
 
 	//NẾU HÓA ĐƠN CÓ CHI TIẾT DỊCH VỤ -> HIỂN THỊ LÊN TABLE
 	useEffect(() => {
 		if (detailsList) {
-			setRowCount(detailsList.length);
+			// setRowCount(detailsList.length);
 			setRowList(
 				detailsList.map((details, index) => {
 					return {
@@ -490,105 +483,105 @@ export default function BillDetails() {
 	//XỬ LÝ LẤY CÁC DANH MỤC ĐANG HOẠT ĐỘNG
 	const getActiveCategories = async () => {
 		setPageLoading(true);
-		const res = await categoryAPI.getActive();
-		setCategoryList(res.data.data);
+		// const res = await categoryAPI.getActive();
+		// setCategoryList(res.data.data);
 		setPageLoading(false);
 	};
 
 	//XỬ LÝ LỌC DỊCH VỤ THEO DANH MỤC ĐÃ CHỌN
 	const getServicesByCategoryID = async (rowId, category_id) => {
 		setPageLoading(true);
-		const res = await serviceAPI.getActiveByCategoryID(category_id);
-		setServiceList((list) => [
-			...list.filter((service) => service.rowId !== rowId),
-			{ rowId, list: res.data.data },
-		]);
+		// const res = await serviceAPI.getActiveByCategoryID(category_id);
+		// setServiceList((list) => [
+		// 	...list.filter((service) => service.rowId !== rowId),
+		// 	{ rowId, list: res.data.data },
+		// ]);
 		setPageLoading(false);
 	};
 
 	//XỬ LÝ THÊM 1 ROW CHO TABLE
-	const handleAddRow = () => {
-		setRowList([
-			...rowList,
-			{
-				rowId: rowList[rowCount - 1].rowId + 1,
-				ordinalNum: rowList[rowCount - 1].ordinalNum + 1,
-			},
-		]);
-		setRowCount(rowCount + 1);
-	};
+	// const handleAddRow = () => {
+	// 	setRowList([
+	// 		...rowList,
+	// 		{
+	// 			rowId: rowList[rowCount - 1].rowId + 1,
+	// 			ordinalNum: rowList[rowCount - 1].ordinalNum + 1,
+	// 		},
+	// 	]);
+	// 	setRowCount(rowCount + 1);
+	// };
 
 	//XỬ LÝ XÓA 1 ROW CHO TABLE
-	const handleDeleteRow = (rowId) => {
-		//có nhiều hơn 1 row -> xóa row
-		if (rowCount > 1) {
-			let list = rowList.filter((row) => row.rowId !== rowId);
-			list = list.map((row, index) => {
-				return {
-					rowId: row.rowId,
-					ordinalNum: index + 1,
-				};
-			});
-			setRowList(list);
-			setRowCount(rowCount - 1);
-		}
+	// const handleDeleteRow = (rowId) => {
+	// 	//có nhiều hơn 1 row -> xóa row
+	// 	if (rowCount > 1) {
+	// 		let list = rowList.filter((row) => row.rowId !== rowId);
+	// 		list = list.map((row, index) => {
+	// 			return {
+	// 				rowId: row.rowId,
+	// 				ordinalNum: index + 1,
+	// 			};
+	// 		});
+	// 		setRowList(list);
+	// 		setRowCount(rowCount - 1);
+	// 	}
 
-		//xóa các thông tin của row đó
-		setSelectedCategories(
-			selectedCategories.filter((category) => {
-				return category.rowId !== rowId;
-			}),
-		);
-		setSelectedServices(
-			selectedServices.filter((service) => {
-				return service.rowId !== rowId;
-			}),
-		);
-		setSelectedQuantities(
-			selectedQuantities.filter((quantity) => {
-				return quantity.rowId !== rowId;
-			}),
-		);
-	};
+	// 	//xóa các thông tin của row đó
+	// 	setSelectedCategories(
+	// 		selectedCategories.filter((category) => {
+	// 			return category.rowId !== rowId;
+	// 		}),
+	// 	);
+	// 	setSelectedServices(
+	// 		selectedServices.filter((service) => {
+	// 			return service.rowId !== rowId;
+	// 		}),
+	// 	);
+	// 	setSelectedQuantities(
+	// 		selectedQuantities.filter((quantity) => {
+	// 			return quantity.rowId !== rowId;
+	// 		}),
+	// 	);
+	// };
 
 	//XỬ LÝ CHỌN DANH MỤC
-	const handleChooseCategory = (rowId, category_id) => {
-		setSelectedCategories([
-			...selectedCategories.filter((category) => category.rowId !== rowId),
-			{ rowId, category_id },
-		]);
+	// const handleChooseCategory = (rowId, category_id) => {
+	// 	setSelectedCategories([
+	// 		...selectedCategories.filter((category) => category.rowId !== rowId),
+	// 		{ rowId, category_id },
+	// 	]);
 
-		//khi thay đổi danh mục thì bỏ các dịch vụ và số lượng của danh mục cũ
-		setSelectedServices(
-			selectedServices.filter((service) => service.rowId !== rowId),
-		);
-		setSelectedQuantities([
-			...selectedQuantities.filter((quantity) => quantity.rowId !== rowId),
-			{ rowId, quantity: 1 },
-		]);
-	};
+	// 	//khi thay đổi danh mục thì bỏ các dịch vụ và số lượng của danh mục cũ
+	// 	setSelectedServices(
+	// 		selectedServices.filter((service) => service.rowId !== rowId),
+	// 	);
+	// 	setSelectedQuantities([
+	// 		...selectedQuantities.filter((quantity) => quantity.rowId !== rowId),
+	// 		{ rowId, quantity: 1 },
+	// 	]);
+	// };
 
 	//XỬ LÝ CHỌN DỊCH VỤ
-	const handleChooseService = (rowId, service_id, price) => {
-		setSelectedServices([
-			...selectedServices.filter((service) => service.rowId !== rowId),
-			{ rowId, service_id, price },
-		]);
+	// const handleChooseService = (rowId, service_id, price) => {
+	// 	setSelectedServices([
+	// 		...selectedServices.filter((service) => service.rowId !== rowId),
+	// 		{ rowId, service_id, price },
+	// 	]);
 
-		//số lượng mặc định là 1 khi chọn/thay đổi dịch vụ
-		setSelectedQuantities([
-			...selectedQuantities.filter((quantity) => quantity.rowId !== rowId),
-			{ rowId, quantity: 1 },
-		]);
-	};
+	// 	//số lượng mặc định là 1 khi chọn/thay đổi dịch vụ
+	// 	setSelectedQuantities([
+	// 		...selectedQuantities.filter((quantity) => quantity.rowId !== rowId),
+	// 		{ rowId, quantity: 1 },
+	// 	]);
+	// };
 
 	//XỬ LÝ CHỌN SỐ LƯỢNG
-	const handleChooseQuantity = (rowId, quantity) => {
-		setSelectedQuantities([
-			...selectedQuantities.filter((quantity) => quantity.rowId !== rowId),
-			{ rowId, quantity },
-		]);
-	};
+	// const handleChooseQuantity = (rowId, quantity) => {
+	// 	setSelectedQuantities([
+	// 		...selectedQuantities.filter((quantity) => quantity.rowId !== rowId),
+	// 		{ rowId, quantity },
+	// 	]);
+	// };
 
 	//XỬ LÝ LẬP HÓA ĐƠN
 	const handleCreateBill = () => {
@@ -981,15 +974,6 @@ export default function BillDetails() {
 											<div className="w-75">
 												<h5 className="text-dark me-3">4. Dịch vụ thực hiện</h5>
 											</div>
-											{bill_id ? (
-												<></>
-											) : (
-												<div className="w-25 btn-add-row-container">
-													<Button onClick={handleAddRow}>
-														<span>Thêm hàng</span>
-													</Button>
-												</div>
-											)}
 										</div>
 										<div className="table-responsive">
 											<Table
@@ -1032,9 +1016,9 @@ export default function BillDetails() {
 								/>
 							</div>
 							<div className="col-md-4 mb-4 text-end">
-								<small>FPT Polytechnic, TP.HCM</small>
+								<small>237 Nguyễn Tất Thành, Quận 4,Tp.HCM</small>
 								<br />
-								<small>076 1234 567</small>
+								<small>(+84) 0975 383 290</small>
 							</div>
 						</div>
 						<div className="row">
@@ -1169,7 +1153,7 @@ export default function BillDetails() {
 										className="btn-primary me-2"
 										style={{ width: '150px' }}
 									>
-										In hóa đơn
+										In hoá đơn
 									</Button>
 								)}
 								content={() => pdfRef.current}

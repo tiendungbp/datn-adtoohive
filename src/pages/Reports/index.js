@@ -14,7 +14,6 @@ import {
 	ArcElement,
 } from 'chart.js';
 import moment from 'moment';
-import localization from 'moment/locale/vi';
 import fileDownload from 'js-file-download';
 import toast from 'react-hot-toast';
 import reportAPI from '../../services/reportAPI';

@@ -53,13 +53,13 @@ export default function NFC() {
 			dataIndex: 'patient_id',
 			align: 'center',
 			render: (patient_id) => (
-				<p
+				<Button
 					onClick={() => {
 						showModalNFC(patient_id);
 					}}
 				>
-					{patient_id}
-				</p>
+					{patient_id.toUpperCase()}
+				</Button>
 			),
 		},
 		{

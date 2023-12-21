@@ -454,6 +454,7 @@ export default function AppointmentDetails() {
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 		getAppointmentByID();
 		getActiveCategories();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	//NẾU LỊCH HẸN CÓ CHI TIẾT DỊCH VỤ -> HIỂN THỊ LÊN TABLE
@@ -528,8 +529,9 @@ export default function AppointmentDetails() {
 		setPageLoading(false);
 
 		if (res.data.errCode === 0) {
-			setAppointment(res.data.data);
-			if (res.data.data.details) setDetailsList(res.data.data.details);
+			await setAppointment(res.data.data);
+			console.log(appointment);
+			if (res.data.data.details) await setDetailsList(res.data.data.details);
 		} else {
 			navigate('/lich-hen');
 		}
@@ -1131,7 +1133,7 @@ export default function AppointmentDetails() {
 													<>
 														<div
 															className={`${
-																appointment.status === 3 ? 'print-btn' : ''
+																appointment.status === 1 ? 'print-btn' : ''
 															}`}
 														>
 															<Button
@@ -1145,7 +1147,7 @@ export default function AppointmentDetails() {
 														</div>
 														<div
 															className={`${
-																appointment.status === 3 ? 'booking-btn' : ''
+																appointment.status === 1 ? 'booking-btn' : ''
 															}`}
 														>
 															<Button
@@ -1509,24 +1511,17 @@ export default function AppointmentDetails() {
 				<Spin tip="Đang tải..." spinning={modalLoading}>
 					<div ref={pdfRef} className="w-100 px-5 pt-5">
 						<div className="row">
-							<div className="col-md-4 mb-4">
+							<div className="col-md-6 mb-4">
 								<img
 									alt=""
 									src={process.env.REACT_APP_LOGO}
 									style={{ width: '200px' }}
 								/>
 							</div>
-							<div className="col-md-4 mb-4 text-center">
-								<img
-									alt=""
-									src="https://res.cloudinary.com/deldfzq9e/image/upload/v1700871567/l2c12x9nvcyeemk3tqul.png"
-									style={{ width: '100px', height: '100px' }}
-								/>
-							</div>
-							<div className="col-md-4 mb-4 text-end">
-								<small>FPT Polytechnic, TP.HCM</small>
+							<div className="col-md-6 mb-4 text-end">
+								<small>237 Nguyễn Tất Thành, Quận 4, Tp.HCM</small>
 								<br />
-								<small>076 1234 567</small>
+								<small>(+84) 0975 383 290</small>
 							</div>
 						</div>
 						<div className="row">
