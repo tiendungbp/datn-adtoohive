@@ -5,7 +5,7 @@ import { Spin, Modal, Form, Radio, Input, DatePicker, Button } from "antd";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import moment from "moment";
-import localization from "moment/locale/vi";
+// import localization from "moment/locale/vi";
 import Swal from "sweetalert2";
 import CommonUtils from "../../utils/commonUtils";
 import patientAPI from "../../services/patientAPI";
@@ -47,12 +47,14 @@ export default function DoctorSchedule(props) {
     //CALL API
     useEffect(() => {
         if(patient_id && isOpen) getPatientByID();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
 
 
     //GÁN THÔNG TIN BỆNH NHÂN LÊN FORM
     useEffect(() => {
         if(patient) form.setFieldsValue(initPatientInfo);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [patient]);
 
 

@@ -8,7 +8,7 @@ import { faImage, faCaretLeft, faCaretRight } from "@fortawesome/free-solid-svg-
 import { faCheckCircle } from "@fortawesome/free-regular-svg-icons";
 import { Vertical } from "../../../../utils/AnimatedPage";
 import moment from "moment";
-import localization from "moment/locale/vi";
+// import localization from "moment/locale/vi";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import toast from "react-hot-toast";
@@ -119,6 +119,7 @@ export default function ScheduleList() {
     //CALL API
     useEffect(() => {
         getAllSchedulesByWeek();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [week]);
 
 

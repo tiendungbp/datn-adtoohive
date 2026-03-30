@@ -76,6 +76,7 @@ export default function ScheduleDetails() {
     //CALL API
     useEffect(() => {
         getUserSchedulesByDate();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
 

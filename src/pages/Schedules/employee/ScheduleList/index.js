@@ -86,6 +86,7 @@ export default function ScheduleList() {
     //CALL API
     useEffect(() => {
         getAllSchedulesByWeek();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [week]);
 
 

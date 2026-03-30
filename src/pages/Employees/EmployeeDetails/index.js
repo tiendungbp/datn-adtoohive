@@ -140,6 +140,7 @@ export default function EmployeeDetails() {
             form.setFieldsValue(initInfo);
             if(user.avatar) setLocalPath(user.avatar);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form, user, doctorCategories]);
 
 
@@ -210,6 +211,7 @@ export default function EmployeeDetails() {
                 setIsHidden(true);
             };
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedRole, user]);
 
 

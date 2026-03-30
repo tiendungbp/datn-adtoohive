@@ -72,6 +72,7 @@ export default function PatientDetails() {
         window.scrollTo({top: 0, behavior: 'smooth'});
         getAllCities();
         if(patient_id) getPatientByID();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
 
@@ -82,6 +83,7 @@ export default function PatientDetails() {
             form.setFieldsValue(initInfo);
             if(patient.avatar) setLocalPath(patient.avatar);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form, patient]);
 
 

@@ -15,6 +15,7 @@ export default function Notification() {
         socket.on("new_appointment", data => {
             setNotificationList(list => [...list, data]);
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [socket]);
 
     return (

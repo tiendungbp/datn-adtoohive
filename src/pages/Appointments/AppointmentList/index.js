@@ -198,6 +198,7 @@ export default function AppointmentList() {
     //CALL API
     useEffect(() => {
         getAllAppointments();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
 
@@ -233,6 +234,7 @@ export default function AppointmentList() {
                 break;
             default: break;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [socket]);
 
 
@@ -248,6 +250,7 @@ export default function AppointmentList() {
             });
             setSearchList(list);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [appointmentList]);
 
 

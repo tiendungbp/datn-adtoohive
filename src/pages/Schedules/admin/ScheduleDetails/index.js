@@ -114,6 +114,7 @@ export default function ScheduleDetails() {
     //CALL API
     useEffect(() => {
         getUserSchedulesByDate();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
 
@@ -130,6 +131,7 @@ export default function ScheduleDetails() {
                 setIsAllAccepted(true);
             };
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scheduleList]);
 
 
