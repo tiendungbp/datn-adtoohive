@@ -129,6 +129,7 @@ export default function EmployeeDetails() {
         window.scrollTo({top: 0, behavior: 'smooth'});
         getAllCities();
         if(user_id) getUserByID();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
 
