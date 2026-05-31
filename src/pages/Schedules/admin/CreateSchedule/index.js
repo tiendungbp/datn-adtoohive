@@ -171,7 +171,7 @@ export default function CreateSchedule() {
                         const employees = selectedEmployee.map(employee => employee.user_id);
                 
                         const obj = {
-                            date: values.date,
+                            date: selectedDate,
                             employees: employees,
                             session_id: selectedSession
                         };
