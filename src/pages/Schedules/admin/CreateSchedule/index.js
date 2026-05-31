@@ -122,6 +122,7 @@ export default function CreateSchedule() {
     //THAY ĐỔI SELECT NGÀY VÀ CA KHÁM
     useEffect(() => {
         if(selectedDate && selectedSession) getAllBySchedule();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedDate, selectedSession]);
 
 

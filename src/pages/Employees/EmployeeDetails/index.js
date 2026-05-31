@@ -129,6 +129,7 @@ export default function EmployeeDetails() {
         window.scrollTo({top: 0, behavior: 'smooth'});
         getAllCities();
         if(user_id) getUserByID();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
 
@@ -140,6 +141,7 @@ export default function EmployeeDetails() {
             form.setFieldsValue(initInfo);
             if(user.avatar) setLocalPath(user.avatar);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form, user, doctorCategories]);
 
 
@@ -210,6 +212,7 @@ export default function EmployeeDetails() {
                 setIsHidden(true);
             };
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedRole, user]);
 
 

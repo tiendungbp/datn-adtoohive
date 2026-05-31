@@ -40,6 +40,7 @@ export default function BookingAppointment() {
     useEffect(() => {
         window.scrollTo({top: 0, behavior: 'smooth'});
         getPatientByID();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
 
@@ -51,6 +52,7 @@ export default function BookingAppointment() {
         ) {
             getAllByCategoryDateSession();
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedCategory, selectedDate, selectedSession]);
 
 
