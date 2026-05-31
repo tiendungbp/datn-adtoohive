@@ -259,34 +259,28 @@ export default function Report() {
 							<div className="row mb-4">
 								<div className="col-md-4">
 									<Card
-										title={`DOANH THU - ${
-											currentRevenue.date ? currentRevenue.date : ''
-										}`}
+										title={`DOANH THU - ${currentRevenue?.date ?? ''}`}
 										style={{ backgroundColor: 'rgba(53, 162, 235, 0.5)' }}
 									>
 										<h3 className="text-white">
-											{CommonUtils.VND.format(currentRevenue.total)}
+											{CommonUtils.VND.format(currentRevenue?.total ?? 0)}
 										</h3>
 									</Card>
 								</div>
 								<div className="col-md-4">
 									<Card
-										title={`LỊCH HẸN MỚI - ${
-											currentAppointment.date ? currentAppointment.date : ''
-										}`}
+										title={`LỊCH HẸN MỚI - ${currentAppointment?.date ?? ''}`}
 										style={{ backgroundColor: 'rgba(255, 99, 132, 0.5)' }}
 									>
-										<h3 className="text-white">{currentAppointment.total}</h3>
+										<h3 className="text-white">{currentAppointment?.total ?? 0}</h3>
 									</Card>
 								</div>
 								<div className="col-md-4">
 									<Card
-										title={`BỆNH NHÂN MỚI - ${
-											currentPatient.date ? currentPatient.date : ''
-										}`}
+										title={`BỆNH NHÂN MỚI - ${currentPatient?.date ?? ''}`}
 										style={{ backgroundColor: 'rgba(53, 162, 235, 0.5)' }}
 									>
-										<h3 className="text-white">{currentPatient.total}</h3>
+										<h3 className="text-white">{currentPatient?.total ?? 0}</h3>
 									</Card>
 								</div>
 							</div>
