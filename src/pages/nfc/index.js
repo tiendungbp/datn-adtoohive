@@ -221,29 +221,52 @@ export default function NFC() {
 	const handleEnter = (e) => {
 		if (e.keyCode === 13) handleSearchByNameOrPhone();
 	};
-	const handleWriteNFC = async (id) => {
-		const loadingToast = toast.loading(
-			'Vui lòng để thẻ áp sát vào mặt sau của điện thoại có hỗ trợ NFC',
-		);
-		try {
-			const ndef = new window.NDEFReader();
-			await ndef.write({
-				records: [
-					{
-						recordType: 'url',
-						data: `https://www.toothhive.online/thong-tin-khach-hang/${id}`,
-					},
-				],
-			});
-			toast.dismiss(loadingToast);
-			toast.success('Bạn đã tích hợp thành công vào thẻ NFC');
-		} catch (error) {
-			toast.dismiss(loadingToast);
-			toast.error(
-				'Không thể đọc thẻ NFC. Bạn nên kiểm tra lại NFC ở máy có hỗ trợ không ?',
-			);
-		}
-	};
+	 const handleWriteNFC = async (id) => {
+    // 1. Kiểm tra môi trường iOS (Safari/Chrome trên iOS không hỗ trợ Web NFC)
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      toast.error(
+        "Hệ điều hành iOS chưa hỗ trợ ghi NFC qua trình duyệt. Vui lòng dùng thiết bị Android hoặc máy tính sảnh!",
+      );
+      return;
+    }
+
+    // 2. Kiểm tra trình duyệt có hỗ trợ Web NFC API không
+    if (!("NDEFReader" in window)) {
+      toast.error(
+        "Trình duyệt không hỗ trợ Web NFC. Vui lòng sử dụng Chrome trên thiết bị Android!",
+      );
+      return;
+    }
+
+    const loadingToast = toast.loading(
+      "Vui lòng áp thẻ NFC sát vào mặt sau thiết bị...",
+    );
+
+    try {
+      const ndef = new window.NDEFReader();
+
+      // Ghi trực tiếp chuỗi ID bệnh nhân vào bản ghi dạng TEXT
+      await ndef.write({
+        records: [
+          {
+            recordType: "text",
+            data: `https://datn-client-rho.vercel.app/thong-tin-khach-hang/${id}`,
+          },
+        ],
+      });
+
+      toast.dismiss(loadingToast);
+      toast.success(`Đã lưu thành công mã ID [${id}] vào thẻ NFC`);
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      console.error("NFC Write Error:", error);
+      toast.error(
+        "Không thể ghi dữ liệu. Vui lòng bật NFC và giữ cố định thẻ sát thiết bị!",
+      );
+    }
+  };
 
 	return (
 		<Vertical>
