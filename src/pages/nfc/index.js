@@ -251,7 +251,7 @@ export default function NFC() {
       await ndef.write({
         records: [
           {
-            recordType: "text",
+            recordType: "url",
             data: `https://datn-client-rho.vercel.app/thong-tin-khach-hang/${id}`,
           },
         ],
